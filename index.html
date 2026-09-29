@@ -65,13 +65,27 @@
         <option value="a4">A4</option>
         <option value="b5">B5</option>
       </select>
+      <fieldset class="book-design">
+        <legend>책 구성</legend>
+        <label for="document-author">저자명</label>
+        <input id="document-author" type="text" maxlength="200" placeholder="저자 이름">
+        <label for="design-theme">디자인 테마</label>
+        <select id="design-theme">
+          <option value="classic">고전 소설</option>
+          <option value="essay">담백한 에세이</option>
+          <option value="modern">현대적인 리포트</option>
+        </select>
+        <label class="toggle-option"><input id="show-cover" type="checkbox"> 표지 넣기</label>
+        <label class="toggle-option"><input id="show-toc" type="checkbox"> 목차 넣기</label>
+        <p class="hint">표지와 목차는 제목·저자명·장 제목으로 자동 구성됩니다. 장 제목은 <code># </code>로 입력하세요.</p>
+      </fieldset>
       <button id="print-button" type="button">인쇄 / PDF로 저장</button>
       <p class="hint">용지 크기와 머리말·꼬리말은 인쇄 대화상자에서도 확인하세요.</p>
     </aside>
 
     <section class="preview-pane" aria-labelledby="preview-heading">
       <div class="pane-heading"><h2 id="preview-heading">원고</h2><span id="paper-description">A5 · 148 × 210 mm</span></div>
-      <article id="book-preview" class="book-page" contenteditable="true" role="textbox" aria-multiline="true" aria-label="원고 본문"></article>
+      <div id="book-preview" class="book-preview" aria-label="원고 미리보기"></div>
     </section>
   </main>
 
