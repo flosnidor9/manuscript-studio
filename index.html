@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#21342d">
+  <title>Write Supporter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Write Supporter 홈">Write Supporter</a>
+    <div class="document-meta">
+      <label for="document-title" class="sr-only">원고 제목</label>
+      <input id="document-title" type="text" maxlength="200" placeholder="제목 없는 원고">
+      <span id="save-status" role="status" aria-live="polite">준비됨</span>
+    </div>
+    <div class="toolbar" aria-label="문서 도구">
+      <button id="undo-button" type="button" title="실행 취소 (Ctrl/Cmd+Z)">↶ <span>실행 취소</span></button>
+      <button id="redo-button" type="button" title="다시 실행 (Ctrl/Cmd+Shift+Z)">↷ <span>다시 실행</span></button>
+      <button id="find-button" type="button" title="찾기 및 바꾸기 (Ctrl/Cmd+F)">찾기·바꾸기</button>
+      <button id="export-button" type="button">JSON 내보내기</button>
+      <button id="export-markdown-button" type="button">Markdown</button>
+      <button id="export-html-button" type="button">HTML</button>
+      <button id="import-button" type="button">JSON 가져오기</button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="library-pane" aria-labelledby="library-heading">
+      <div class="pane-heading"><h1 id="library-heading">저장된 원고</h1><button id="new-document-button" type="button">새 원고</button></div>
+      <nav id="document-list" class="document-list" aria-label="저장된 원고 목록"></nav>
+      <button id="undo-delete-button" class="undo-delete-button" type="button" hidden>마지막 삭제 되돌리기</button>
+      <section class="trash-pane" aria-labelledby="trash-heading">
+        <button id="toggle-trash-button" class="toggle-trash-button" type="button" aria-expanded="false"><span id="trash-heading">휴지통</span> <span id="trash-count">0</span></button>
+        <div id="trash-list" class="trash-list" hidden></div>
+      </section>
+      <p id="document-stats" class="stats" aria-live="polite"></p>
+    </aside>
+
+    <aside class="settings-pane" aria-labelledby="settings-heading">
+      <h2 id="settings-heading">조판 설정</h2>
+      <label for="font-size">본문 크기 <output id="font-size-value">10.5pt</output></label>
+      <input id="font-size" type="range" min="8" max="18" value="10.5" step="0.5">
+      <label for="line-height">줄 간격 <output id="line-height-value">1.8</output></label>
+      <input id="line-height" type="range" min="1.2" max="2.4" value="1.8" step="0.1">
+      <label for="font-family">본문 글꼴</label>
+      <select id="font-family">
+        <option value="serif">명조 계열</option>
+        <option value="sans-serif">고딕 계열</option>
+        <option value="monospace">고정폭</option>
+      </select>
+      <label for="paper-size">판형</label>
+      <select id="paper-size">
+        <option value="a5">A5</option>
+        <option value="a4">A4</option>
+        <option value="b5">B5</option>
+      </select>
+      <button id="print-button" type="button">인쇄 / PDF로 저장</button>
+      <p class="hint">용지 크기와 머리말·꼬리말은 인쇄 대화상자에서도 확인하세요.</p>
+    </aside>
+
+    <section class="preview-pane" aria-labelledby="preview-heading">
+      <div class="pane-heading"><h2 id="preview-heading">원고</h2><span id="paper-description">A5 · 148 × 210 mm</span></div>
+      <article id="book-preview" class="book-page" contenteditable="true" role="textbox" aria-multiline="true" aria-label="원고 본문"></article>
+    </section>
+  </main>
+
+  <dialog id="find-dialog" class="find-dialog" aria-labelledby="find-dialog-heading">
+    <form id="find-form" method="dialog">
+      <div class="dialog-heading">
+        <h2 id="find-dialog-heading">찾기·바꾸기</h2>
+        <button id="close-find-button" type="submit" value="close" aria-label="찾기·바꾸기 닫기">×</button>
+      </div>
+      <label for="find-query">찾을 내용</label>
+      <input id="find-query" type="search" maxlength="500" autocomplete="off">
+      <div class="find-options">
+        <label><input id="find-case-sensitive" type="checkbox"> 대소문자 구분</label>
+        <label><input id="find-regex" type="checkbox"> 정규식</label>
+      </div>
+      <p id="find-status" class="find-status" role="status" aria-live="polite">찾을 내용을 입력하세요.</p>
+      <div class="find-actions">
+        <button id="find-previous-button" type="button">이전</button>
+        <button id="find-next-button" type="button">다음</button>
+      </div>
+      <label for="replace-query">바꿀 내용</label>
+      <input id="replace-query" type="text" maxlength="500" autocomplete="off">
+      <button id="replace-all-button" class="replace-all-button" type="button">전체 바꾸기</button>
+      <hr>
+      <button id="ellipsis-button" class="ellipsis-button" type="button">…을 가운데 말줄임표(⋯)로 정리</button>
+      <p class="hint">정규식은 원고 본문에서만 검색합니다. 전체 바꾸기와 정리 전에는 복구 지점을 만듭니다.</p>
+    </form>
+  </dialog>
+  <script src="app.js" defer></script>
+</body>
+</html>
