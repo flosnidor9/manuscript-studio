@@ -1,4 +1,4 @@
-const CACHE = 'manuscript-studio-v10';
+const CACHE = 'manuscript-studio-v15';
 const ASSETS = ['./', './index.html', './styles.css', './app.js'];
 
 self.addEventListener('install', event => {
@@ -15,18 +15,11 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
 
-  event.respondWith(caches.match(request).then(cached => {
-    const network = fetch(request).then(response => {
-      if (response.ok && response.type === 'basic') {
-        const copy = response.clone();
-        caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {});
-      }
-      return response;
-    });
-    if (cached) {
-      network.catch(() => {});
-      return cached;
+  event.respondWith(fetch(request).then(response => {
+    if (response.ok && response.type === 'basic') {
+      const copy = response.clone();
+      event.waitUntil(caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {}));
     }
-    return network.catch(() => request.mode === 'navigate' ? caches.match('./index.html') : Response.error());
-  }));
+    return response;
+  }).catch(async () => (await caches.match(request)) || (request.mode === 'navigate' ? await caches.match('./index.html') : null) || Response.error()));
 });
