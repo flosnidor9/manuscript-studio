@@ -87,7 +87,6 @@
         <button id="print-button" type="button">PDF로 저장</button>
         <button id="png-button" type="button">PNG로 저장</button>
       </div>
-      <p class="hint">PDF는 현재 판형과 여백을 반영해 이 기기에 파일로 저장됩니다.</p>
     </aside>
 
     <section class="preview-pane" aria-labelledby="preview-heading">
@@ -119,6 +118,22 @@
       <hr>
       <button id="ellipsis-button" class="ellipsis-button" type="button">…을 가운데 말줄임표(⋯)로 정리</button>
       <p class="hint">정규식은 원고 본문에서만 검색합니다. 전체 바꾸기와 정리 전에는 복구 지점을 만듭니다.</p>
+    </form>
+  </dialog>
+  <dialog id="export-error-dialog" class="export-error-dialog" aria-labelledby="export-error-heading" aria-describedby="export-error-description">
+    <form method="dialog">
+      <div class="dialog-heading">
+        <h2 id="export-error-heading">내보내기에 실패했습니다</h2>
+        <button type="submit" value="close" aria-label="오류 창 닫기">×</button>
+      </div>
+      <p id="export-error-description">아래 오류 내용을 복사해 문제를 전달할 수 있습니다.</p>
+      <label for="export-error-message">오류 내용</label>
+      <textarea id="export-error-message" rows="6" readonly spellcheck="false"></textarea>
+      <div class="export-error-actions">
+        <button id="copy-export-error-button" type="button">오류 내용 복사</button>
+        <button type="submit" value="close">닫기</button>
+      </div>
+      <p id="export-error-copy-status" class="export-error-copy-status" role="status" aria-live="polite"></p>
     </form>
   </dialog>
   <script src="app.js" defer></script>
