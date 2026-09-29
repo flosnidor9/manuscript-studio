@@ -41,6 +41,14 @@
 
     <aside class="settings-pane" aria-labelledby="settings-heading">
       <h2 id="settings-heading">조판 설정</h2>
+      <label for="typesetting-preset">자주 쓰는 책 설정</label>
+      <select id="typesetting-preset" aria-describedby="typesetting-preset-description">
+        <option value="custom">직접 설정</option>
+        <option value="a5-novel">A5 소설책 · 명조 10pt / 1.8</option>
+        <option value="b5-essay">B5 에세이·실용서 · 명조 11pt / 1.9</option>
+        <option value="a4-manuscript">A4 원고·교정 · 고딕 11pt / 1.7</option>
+      </select>
+      <p id="typesetting-preset-description" class="preset-description" aria-live="polite">원고에 맞는 설정을 고른 뒤에도 개별 항목을 조절할 수 있습니다.</p>
       <label for="font-size">본문 크기 <output id="font-size-value">10.5pt</output></label>
       <input id="font-size" type="range" min="8" max="18" value="10.5" step="0.5">
       <label for="line-height">줄 간격 <output id="line-height-value">1.8</output></label>
