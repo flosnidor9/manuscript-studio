@@ -16,12 +16,7 @@
       <span id="save-status" role="status" aria-live="polite">준비됨</span>
     </div>
     <div class="toolbar" aria-label="문서 도구">
-      <button id="undo-button" type="button" title="실행 취소 (Ctrl/Cmd+Z)">↶ <span>실행 취소</span></button>
-      <button id="redo-button" type="button" title="다시 실행 (Ctrl/Cmd+Shift+Z)">↷ <span>다시 실행</span></button>
-      <button id="find-button" type="button" title="찾기 및 바꾸기 (Ctrl/Cmd+F)">찾기·바꾸기</button>
       <button id="export-button" type="button">JSON 내보내기</button>
-      <button id="export-markdown-button" type="button">Markdown</button>
-      <button id="export-html-button" type="button">HTML</button>
       <button id="import-button" type="button">JSON 가져오기</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
     </div>
@@ -79,7 +74,10 @@
         <label class="toggle-option"><input id="show-toc" type="checkbox"> 목차 넣기</label>
         <p class="hint">표지와 목차는 제목·저자명·장 제목으로 자동 구성됩니다. 장 제목은 <code># </code>로 입력하세요.</p>
       </fieldset>
-      <button id="print-button" type="button">인쇄 / PDF로 저장</button>
+      <div class="export-actions">
+        <button id="print-button" type="button">인쇄 / PDF로 저장</button>
+        <button id="png-button" type="button">PNG로 저장</button>
+      </div>
       <p class="hint">용지 크기와 머리말·꼬리말은 인쇄 대화상자에서도 확인하세요.</p>
     </aside>
 
