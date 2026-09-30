@@ -94,7 +94,26 @@ try {
   await call('Input.insertText', { text: 'y' });
   const afterClick = await evaluate(state);
   assert.deepEqual(afterClick.blocks.map(block => block.text), ['', '', 'x', 'y'], JSON.stringify({ point, afterClick }));
-  console.log('Empty blocks survive Enter, blur, online and offline reload, and accept mouse input.');
+  const pasted = `도입 ${'긴단어'.repeat(400)}`;
+  await evaluate(`(()=>{const block=document.querySelector('.manuscript-page > [data-block]');block.closest('.manuscript-page').focus();const range=document.createRange();range.selectNodeContents(block);range.collapse(false);getSelection().removeAllRanges();getSelection().addRange(range);const clipboard=new DataTransfer();clipboard.setData('text/plain',${JSON.stringify(pasted)});block.dispatchEvent(new ClipboardEvent('paste',{bubbles:true,cancelable:true,clipboardData:clipboard}));})()`);
+  const afterPaste = await evaluate('(()=>({firstPageText:document.querySelector(".manuscript-page > [data-block]").textContent,allText:[...document.querySelectorAll(".manuscript-page > [data-block]")].map(block=>block.textContent).join(""),overflow:[...document.querySelectorAll(".manuscript-page")].some(page=>page.scrollHeight>page.clientHeight+1)}))()');
+  assert.ok(afterPaste.firstPageText.length > 100, JSON.stringify(afterPaste));
+  assert.equal(afterPaste.allText, `${pasted}xy`);
+  assert.equal(afterPaste.overflow, false);
+  const lineStartsWithPeriod = await evaluate(`(()=>{const page=document.querySelector('.manuscript-page'),p=document.createElement('p');page.append(p);p.textContent='가가가.';let bad=false;for(let width=20;width<=90;width++){p.style.width=width+'px';const ranges=[2,3].map(i=>{const range=document.createRange();range.setStart(p.firstChild,i);range.setEnd(p.firstChild,i+1);return range.getBoundingClientRect()});if(ranges[1].top>ranges[0].top+1)bad=true}p.remove();return bad})()`);
+  assert.equal(lineStartsWithPeriod, false);
+  const wrappedPeriod = await evaluate(`(()=>{const first=document.querySelector('.manuscript-page > [data-block]');document.querySelectorAll('.manuscript-page > [data-block]').forEach(block=>{if(block!==first)block.remove()});first.style.width='42px';first.textContent='가가가.';first.dispatchEvent(new Event('input',{bubbles:true}));const period=first.querySelector('.hanging-period'),range=document.createRange();range.setStart(first.firstChild,1);range.setEnd(first.firstChild,2);const precedingTop=range.getBoundingClientRect().top;range.setStart(first.firstChild,2);range.setEnd(first.firstChild,3);return {text:first.textContent,hanging:Boolean(period),precedingTop,lastTop:range.getBoundingClientRect().top,periodTop:period?.getBoundingClientRect().top}})()`);
+  assert.equal(wrappedPeriod.text, '가가가.');
+  assert.equal(wrappedPeriod.hanging, true, JSON.stringify(wrappedPeriod));
+  assert.ok(Math.abs(wrappedPeriod.precedingTop - wrappedPeriod.lastTop) < 1, JSON.stringify(wrappedPeriod));
+  assert.ok(Math.abs(wrappedPeriod.lastTop - wrappedPeriod.periodTop) < 5, JSON.stringify(wrappedPeriod));
+  await evaluate(`(()=>{const block=document.querySelector('.manuscript-page > [data-block]'),range=document.createRange();block.closest('.manuscript-page').focus();range.selectNodeContents(block);range.collapse(false);getSelection().removeAllRanges();getSelection().addRange(range)})()`);
+  await call('Input.insertText', { text: '나' });
+  assert.equal(await evaluate('document.querySelector(".manuscript-page > [data-block]").textContent'), '가가가.나');
+  const periodCases = await evaluate(`(()=>{const first=document.querySelector('.manuscript-page > [data-block]');document.querySelectorAll('.manuscript-page > [data-block]').forEach(block=>{if(block!==first)block.remove()});first.style.width='42px';first.textContent='가'.repeat(1500);first.dispatchEvent(new Event('input',{bubbles:true}));const capacity=document.querySelector('.manuscript-page > [data-block]').textContent.length;const cases=[];for(let n=capacity-10;n<=capacity+10;n++){const block=document.querySelector('.manuscript-page > [data-block]');document.querySelectorAll('.manuscript-page > [data-block]').forEach(item=>{if(item!==block)item.remove()});block.textContent='가'.repeat(n)+'.'+'가'.repeat(300);block.dispatchEvent(new Event('input',{bubbles:true}));const pages=[...document.querySelectorAll('.manuscript-page')];const firstPage=pages[0].querySelector('[data-block]');const nextPage=pages[1]?.querySelector('[data-block]')?.textContent||'';cases.push({n,firstLength:firstPage.textContent.length,firstEnd:firstPage.textContent.slice(-3),hanging:Boolean(firstPage.querySelector('.hanging-period')),nextStart:nextPage.slice(0,3)})}return cases})()`);
+  assert.ok(periodCases.some(item => item.hanging && item.firstLength === item.n + 1 && item.firstEnd.endsWith('가.')), JSON.stringify(periodCases));
+  assert.ok(periodCases.every(item => !item.nextStart.startsWith('.')), JSON.stringify(periodCases));
+  console.log('Empty blocks, long paste, and hanging periods survive editing and pagination.');
 } finally {
   socket?.close();
   browser.kill();

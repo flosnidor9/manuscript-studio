@@ -54,10 +54,72 @@
   function staticSection(className) { const section = pageElement(className); section.contentEditable = 'false'; section.dataset.static = 'true'; return section; }
   function blockElement(block) { const node = document.createElement(block.type === 'heading' ? 'h1' : block.type === 'subheading' ? 'h2' : block.type === 'quote' ? 'blockquote' : 'p'); node.dataset.block = block.type; node.textContent = block.text; return node; }
   function createManuscriptPage() { const page = pageElement(); page.contentEditable = 'true'; page.setAttribute('role', 'textbox'); page.setAttribute('aria-multiline', 'true'); page.setAttribute('aria-label', '원고 본문'); return page; }
-  function splitOverflowingBlock(page, node) { if (!['P', 'BLOCKQUOTE'].includes(node.tagName)) return null; const text = node.textContent; if (text.length < 2) return null; let low = 1, high = text.length - 1, fit = 0; while (low <= high) { const middle = Math.floor((low + high) / 2); node.textContent = text.slice(0, middle); if (page.scrollHeight <= page.clientHeight + 1) { fit = middle; low = middle + 1; } else high = middle - 1; } if (!fit) { node.textContent = text; return null; } const boundary = text.lastIndexOf(' ', fit); const splitAt = boundary > 0 ? boundary + 1 : fit; node.textContent = text.slice(0, splitAt); const continuation = blockElement({ type: node.tagName === 'BLOCKQUOTE' ? 'quote' : 'paragraph', text: text.slice(splitAt) }); continuation.dataset.flowContinuation = 'true'; return continuation; }
-  function paginatePreview() { const blocks = [...el.preview.querySelectorAll('.manuscript-page:not([data-static]) > *')].filter(node => !node.dataset.static); const allPages = [...el.preview.querySelectorAll('.book-page')]; allPages.forEach(syncPagePadding); const pages = allPages.filter(page => !page.dataset.static); const first = pages[0] || createManuscriptPage(), staticBlocks = [...first.querySelectorAll(':scope > [data-static]')]; if (!first.isConnected) { el.preview.append(first); syncPagePadding(first); } pages.forEach(page => page.replaceChildren()); first.append(...staticBlocks); let page = first; for (let index = 0; index < blocks.length; index += 1) { const node = blocks[index]; page.append(node); if (page.scrollHeight <= page.clientHeight + 1) continue; const continuation = splitOverflowingBlock(page, node); if (continuation) { blocks.splice(index + 1, 0, continuation); page = createManuscriptPage(); el.preview.append(page); syncPagePadding(page); continue; } if (page.childElementCount > 1) { page = createManuscriptPage(); el.preview.append(page); syncPagePadding(page); page.append(node); } } if (!first.childElementCount) first.append(blockElement({ type: 'paragraph', text: '' })); [...el.preview.querySelectorAll('.manuscript-page')].slice(1).forEach(page => { if (!page.childElementCount) page.remove(); }); }
+  function decorateWrappedPeriods(node) {
+    const value = node.textContent;
+    if (!/[.。]/.test(value)) return;
+    const fragment = document.createDocumentFragment(), periods = [];
+    let start = 0;
+    for (const match of value.matchAll(/[.。]+/g)) {
+      fragment.append(document.createTextNode(value.slice(start, match.index)));
+      const period = document.createElement('span');
+      period.textContent = match[0];
+      fragment.append(period);
+      periods.push({ period, end: match.index + match[0].length });
+      start = match.index + match[0].length;
+    }
+    fragment.append(document.createTextNode(value.slice(start)));
+    node.replaceChildren(fragment);
+    const originalAlign = node.style.textAlign, right = node.getBoundingClientRect().right;
+    node.style.textAlign = 'left';
+    for (const { period, end } of periods) {
+      if (node.dataset.hangingEnd && end === value.length) { period.className = 'hanging-period'; continue; }
+      const before = period.previousSibling;
+      if (before?.nodeType !== Node.TEXT_NODE || before.length < 2 || before.data.endsWith('\n')) continue;
+      const range = document.createRange();
+      range.setStart(before, before.length - 2); range.setEnd(before, before.length - 1);
+      const preceding = range.getBoundingClientRect();
+      range.setStart(before, before.length - 1); range.setEnd(before, before.length);
+      const last = range.getBoundingClientRect();
+      if (last.top > preceding.top + 1 && preceding.right + last.width <= right + 1) period.className = 'hanging-period';
+    }
+    node.style.textAlign = originalAlign;
+    periods.forEach(({ period }) => { if (!period.className) period.replaceWith(document.createTextNode(period.textContent)); });
+    node.normalize();
+  }
+  function splitOverflowingBlock(page, node) {
+    if (!['P', 'BLOCKQUOTE'].includes(node.tagName)) return null;
+    const text = node.textContent;
+    if (text.length < 2) return null;
+    let low = 1, high = text.length - 1, fit = 0;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      node.textContent = text.slice(0, middle);
+      if (page.scrollHeight <= page.clientHeight + 1) { fit = middle; low = middle + 1; } else high = middle - 1;
+    }
+    fit = /[\uDC00-\uDFFF]/.test(text[fit] || '') ? fit - 1 : fit;
+    let splitAt = fit, hanging = false;
+    const periodAt = /[.。]/.test(text[fit] || '') ? fit : /[.。]/.test(text[fit + 1] || '') ? fit + 1 : -1;
+    if (periodAt > 0 && text[periodAt - 1] !== '\n') {
+      let end = periodAt + 1;
+      while (/[.。]/.test(text[end] || '')) end += 1;
+      node.textContent = text.slice(0, periodAt);
+      const period = document.createElement('span');
+      period.className = 'hanging-period';
+      period.textContent = text.slice(periodAt, end);
+      node.append(period);
+      if (page.scrollHeight <= page.clientHeight + 1) { splitAt = end; hanging = true; }
+      else { splitAt = periodAt - 1; if (splitAt > 0 && /[\uDC00-\uDFFF]/.test(text[splitAt])) splitAt -= 1; }
+    }
+    if (!splitAt) { node.textContent = text; return null; }
+    if (!hanging) node.textContent = text.slice(0, splitAt);
+    else node.dataset.hangingEnd = 'true';
+    const continuation = blockElement({ type: node.tagName === 'BLOCKQUOTE' ? 'quote' : 'paragraph', text: text.slice(splitAt) });
+    continuation.dataset.flowContinuation = 'true';
+    return continuation;
+  }
+  function paginatePreview() { const blocks = [...el.preview.querySelectorAll('.manuscript-page:not([data-static]) > *')].filter(node => !node.dataset.static); blocks.forEach(node => { node.textContent = node.textContent; delete node.dataset.hangingEnd; }); const allPages = [...el.preview.querySelectorAll('.book-page')]; allPages.forEach(syncPagePadding); const pages = allPages.filter(page => !page.dataset.static); const first = pages[0] || createManuscriptPage(), staticBlocks = [...first.querySelectorAll(':scope > [data-static]')]; if (!first.isConnected) { el.preview.append(first); syncPagePadding(first); } pages.forEach(page => page.replaceChildren()); first.append(...staticBlocks); let page = first; for (let index = 0; index < blocks.length; index += 1) { const node = blocks[index]; page.append(node); if (page.scrollHeight <= page.clientHeight + 1) continue; const continuation = splitOverflowingBlock(page, node); if (continuation) { blocks.splice(index + 1, 0, continuation); page = createManuscriptPage(); el.preview.append(page); syncPagePadding(page); continue; } if (page.childElementCount > 1) { page = createManuscriptPage(); el.preview.append(page); syncPagePadding(page); page.append(node); } } if (!first.childElementCount) first.append(blockElement({ type: 'paragraph', text: '' })); [...el.preview.querySelectorAll('.manuscript-page')].slice(1).forEach(page => { if (!page.childElementCount) page.remove(); }); }
   const paginatePreviewUnsafe = paginatePreview;
-  paginatePreview = () => { paginatePreviewUnsafe(); updateToc(); };
+  paginatePreview = () => { paginatePreviewUnsafe(); el.preview.querySelectorAll('.manuscript-page > [data-block]').forEach(decorateWrappedPeriods); updateToc(); };
   function chapterPageNumbers() { const pages = [...el.preview.querySelectorAll('.book-page')]; return [...el.preview.querySelectorAll('.manuscript-page > h1[data-block="heading"]')].map(chapter => pages.indexOf(chapter.closest('.book-page')) + 1); }
   function createTocSection(blocks, pageNumbers = []) { const chapters = blocks.filter(block => block.type === 'heading'), toc = staticSection('toc-page'), heading = document.createElement('h2'); heading.textContent = '목차'; const list = document.createElement('ol'); if (chapters.length) { chapters.forEach((block, index) => { const item = document.createElement('li'), name = document.createElement('span'), number = document.createElement('span'); name.textContent = block.text || `장 ${index + 1}`; number.textContent = pageNumbers[index] ? `${pageNumbers[index]}p` : '—'; item.append(name, number); list.append(item); }); toc.append(heading, list); } else { const empty = document.createElement('p'); empty.className = 'toc-empty'; empty.textContent = '장 제목을 추가하면 이곳에 목차가 표시됩니다.'; toc.append(heading, empty); } return toc; }
   function updateToc() { const current = el.preview.querySelector('.toc-page'); if (!doc.typesetting.showToc) { current?.remove(); return; } const toc = createTocSection(documentBlocks(), chapterPageNumbers()); if (current) current.replaceWith(toc); else { const firstPage = el.preview.querySelector('.manuscript-page'); firstPage ? el.preview.insertBefore(toc, firstPage) : el.preview.append(toc); } syncPagePadding(toc); }
@@ -91,7 +153,7 @@
   function safeFileName() { const name = (doc.meta.title || '원고').trim().replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/[. ]+$/g, '').slice(0, 80); return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(name) || !name ? '원고' : name; }
   function downloadBlob(contents, type, extension, name = safeFileName()) { const blob = new Blob([contents], { type }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${name}.${extension}`; a.hidden = true; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   function download() { downloadBlob(JSON.stringify(doc, null, 2), 'application/json', 'json'); }
-  function canvasLines(context, value, maxWidth) { const lines = []; String(value).split('\n').forEach(paragraph => { if (!paragraph) { lines.push(''); return; } let line = ''; for (const character of paragraph) { const next = line + character; if (line && context.measureText(next).width > maxWidth) { lines.push(line); line = character.trimStart(); } else line = next; } lines.push(line); }); return lines; }
+  function canvasLines(context, value, maxWidth) { const lines = []; String(value).split('\n').forEach(paragraph => { if (!paragraph) { lines.push(''); return; } let line = ''; for (const character of paragraph) { const next = line + character; if (line && context.measureText(next).width > maxWidth) { if (/[.。]/.test(character)) line = next; else { lines.push(line); line = character.trimStart(); } } else line = next; } lines.push(line); }); return lines; }
   function drawPageBlock(context, pageBounds, node) { const bounds = node.getBoundingClientRect(), style = getComputedStyle(node), x = bounds.left - pageBounds.left, y = bounds.top - pageBounds.top, width = bounds.width, height = bounds.height, fontSize = Number.parseFloat(style.fontSize) || 16, lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.5; context.save(); context.font = `${style.fontStyle} ${style.fontWeight} ${fontSize}px ${style.fontFamily}`; context.fillStyle = style.color || '#262b25'; context.textBaseline = 'top'; if (node.tagName === 'BLOCKQUOTE') { const border = Number.parseFloat(style.borderLeftWidth) || 2; context.fillStyle = style.borderLeftColor || '#a1ad9b'; context.fillRect(x, y, border, height); context.fillStyle = style.color || '#596358'; } const left = x + (node.tagName === 'BLOCKQUOTE' ? Number.parseFloat(style.paddingLeft) || 0 : 0), lines = canvasLines(context, node.textContent, Math.max(1, width - (left - x))), visible = Math.max(1, Math.floor(height / lineHeight)); lines.slice(0, visible).forEach((line, index) => { const textWidth = context.measureText(line).width; const textX = style.textAlign === 'center' ? left + (width - (left - x) - textWidth) / 2 : style.textAlign === 'right' ? x + width - textWidth : left; context.fillText(line, textX, y + index * lineHeight); }); context.restore(); }
   async function rasterizePage(page, scale = 2) { const bounds = page.getBoundingClientRect(), width = Math.round(bounds.width * scale), height = Math.round(bounds.height * scale); if (!width || !height || width * height > 24_000_000) throw new Error('페이지 크기가 너무 큽니다'); const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const context = canvas.getContext('2d'); if (!context) throw new Error('이미지 캔버스를 만들지 못했습니다'); const style = getComputedStyle(page); context.scale(scale, scale); context.fillStyle = style.backgroundColor && style.backgroundColor !== 'rgba(0, 0, 0, 0)' ? style.backgroundColor : '#fffdf7'; context.fillRect(0, 0, bounds.width, bounds.height); [...page.querySelectorAll(':scope > *')].forEach(node => drawPageBlock(context, bounds, node)); return canvas; }
   function joinBytes(parts) { const size = parts.reduce((total, part) => total + part.length, 0), result = new Uint8Array(size); let offset = 0; parts.forEach(part => { result.set(part, offset); offset += part.length; }); return result; }
