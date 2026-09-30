@@ -1,4 +1,4 @@
-const CACHE = 'manuscript-studio-v18';
+const CACHE = 'manuscript-studio-v25';
 const ASSETS = ['./', './index.html', './styles.css', './app.js'];
 
 self.addEventListener('install', event => {

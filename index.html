@@ -42,6 +42,11 @@
         <option value="a5-novel">A5 소설책 · 명조 10pt / 1.8</option>
         <option value="b5-essay">B5 에세이·실용서 · 명조 11pt / 1.9</option>
         <option value="a4-manuscript">A4 원고·교정 · 고딕 11pt / 1.7</option>
+        <option value="a5-compact">A5 휴대용 소설 · 명조 9pt / 1.6</option>
+        <option value="a5-large">A5 큰 글씨 책 · 명조 13pt / 1.9</option>
+        <option value="b5-poetry">B5 시집 · 명조 12pt / 2.1</option>
+        <option value="b5-report">B5 리포트 · 고딕 10pt / 1.6</option>
+        <option value="a4-workbook">A4 학습 자료 · 고딕 12pt / 1.8</option>
       </select>
       <p id="typesetting-preset-description" class="preset-description" aria-live="polite">원고에 맞는 설정을 고른 뒤에도 개별 항목을 조절할 수 있습니다.</p>
       <label for="font-size">본문 크기 <output id="font-size-value">10.5pt</output></label>
@@ -53,7 +58,24 @@
         <option value="serif">명조 계열</option>
         <option value="sans-serif">고딕 계열</option>
         <option value="monospace">고정폭</option>
+        <optgroup label="한글 글꼴 · 설치된 경우 사용">
+          <option value="noto-serif-kr">Noto Serif KR</option>
+          <option value="nanum-myeongjo">나눔명조</option>
+          <option value="batang">바탕</option>
+          <option value="noto-sans-kr">Noto Sans KR</option>
+          <option value="nanum-gothic">나눔고딕</option>
+          <option value="malgun-gothic">맑은 고딕</option>
+          <option value="apple-sd-gothic-neo">Apple SD Gothic Neo</option>
+        </optgroup>
+        <optgroup label="영문 글꼴 · 설치된 경우 사용">
+          <option value="georgia">Georgia</option>
+          <option value="times-new-roman">Times New Roman</option>
+          <option value="arial">Arial</option>
+          <option value="verdana">Verdana</option>
+          <option value="courier-new">Courier New</option>
+        </optgroup>
       </select>
+      <p class="hint">설치되지 않은 글꼴은 비슷한 기본 글꼴로 표시됩니다.</p>
       <label for="paper-size">판형</label>
       <select id="paper-size">
         <option value="a5">A5</option>
@@ -63,10 +85,8 @@
       <fieldset class="margin-controls">
         <legend>여백</legend>
         <div class="margin-grid">
-          <label for="margin-top">위 <output id="margin-top-value">18mm</output><input id="margin-top" type="range" min="8" max="35" value="18" step="1"></label>
-          <label for="margin-right">오른쪽 <output id="margin-right-value">16mm</output><input id="margin-right" type="range" min="8" max="35" value="16" step="1"></label>
-          <label for="margin-bottom">아래 <output id="margin-bottom-value">20mm</output><input id="margin-bottom" type="range" min="8" max="35" value="20" step="1"></label>
-          <label for="margin-left">왼쪽 <output id="margin-left-value">20mm</output><input id="margin-left" type="range" min="8" max="35" value="20" step="1"></label>
+          <label for="margin-horizontal">가로 (왼쪽·오른쪽) <output id="margin-horizontal-value">18mm</output><input id="margin-horizontal" type="range" min="8" max="35" value="18" step="1"></label>
+          <label for="margin-vertical">세로 (위·아래) <output id="margin-vertical-value">19mm</output><input id="margin-vertical" type="range" min="8" max="35" value="19" step="1"></label>
         </div>
       </fieldset>
       <fieldset class="book-design">
@@ -118,7 +138,7 @@
       <input id="replace-query" type="text" maxlength="500" autocomplete="off">
       <button id="replace-all-button" class="replace-all-button" type="button">전체 바꾸기</button>
       <hr>
-      <button id="ellipsis-button" class="ellipsis-button" type="button">…을 가운데 말줄임표(⋯)로 정리</button>
+      <button id="ellipsis-button" class="ellipsis-button" type="button">말줄임표 정리 (... → ······, .... → ······.)</button>
       <p class="hint">정규식은 원고 본문에서만 검색합니다. 전체 바꾸기와 정리 전에는 복구 지점을 만듭니다.</p>
     </form>
   </dialog>
