@@ -65,3 +65,60 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .font-picker-empty { color: #657269; font-size: .7rem; margin: .7rem .4rem; }
 .library-pane .document-meta { display: grid; gap: .4rem; margin: .15rem 0 .8rem; }.library-pane .document-meta input, .library-pane .book-design input[type="text"], .library-pane .book-design select { background: #fffef9; border: 1px solid #cbd0c8; border-radius: 4px; color: #314037; font-size: .73rem; padding: .55rem; width: 100%; }.library-pane .document-meta #save-status { color: #657269; font-size: .62rem; }.library-pane .book-design { margin: .8rem 0 1.2rem; }.library-pane .book-design label { color: #657269; display: block; font-size: .66rem; letter-spacing: .04em; margin: .8rem 0 .4rem; }.library-pane .book-design .toggle-option { align-items: center; color: #4c5a50; display: flex; font-size: .7rem; gap: .45rem; margin-top: .7rem; }.library-pane .book-design .toggle-option input { accent-color: #42694e; height: 1rem; margin: 0; width: 1rem; }
 .cover-page, .toc-page { break-after: page; break-inside: avoid; margin: 0 auto; page-break-after: always; }.cover-page { align-items: center; background: #21372d; color: #fffdf4; display: flex; flex-direction: column; justify-content: center; padding: 18%; text-align: center; }.cover-page .cover-label { color: #c3d4af; font-family: ui-monospace, monospace; font-size: .55em; letter-spacing: .22em; margin: 0 0 auto; }.cover-page h1 { font-family: "Noto Serif KR", Georgia, serif; font-size: 2.55em; line-height: 1.35; margin: auto 0 .8em; overflow-wrap: anywhere; }.cover-page .cover-author { color: #e4eadb; font-size: .85em; letter-spacing: .08em; margin: 0; text-align: center; }.toc-page { background: #f8f5ea; }.toc-page h2 { border-bottom: 1px solid #bfc8b9; font-size: 1.45em; margin: 0 0 1em; padding-bottom: .55em; }.toc-page ol { list-style: none; margin: 0; padding: 0; }.toc-page li { align-items: baseline; display: flex; gap: .7em; margin: .65em 0; }.toc-page li::after { border-bottom: 1px dotted #9ca99c; content: ""; flex: 1; order: 1; }.toc-page li span:last-child { color: #667267; font-size: .8em; order: 2; }.toc-empty { color: #667267; font-size: .88em; text-align: left !important; }.book-page[data-theme="essay"] .cover-page { background: #a15c44; }.book-page[data-theme="essay"] blockquote { border-color: #b7755c; color: #754838; }.book-page[data-theme="modern"] { font-family: ui-sans-serif, system-ui, sans-serif; }.book-page[data-theme="modern"] .cover-page { background: #263b5a; }.book-page[data-theme="modern"] .cover-page h1, .book-page[data-theme="modern"] h1, .book-page[data-theme="modern"] h2 { font-family: ui-sans-serif, system-ui, sans-serif; letter-spacing: -.08em; }.book-page[data-theme="modern"] .toc-page { background: #edf2f8; }.book-page[data-theme="modern"] blockquote { border-color: #6684ac; color: #435b79; }
+
+/* 서정 시집: 넉넉한 여백과 한 개의 원으로 제목에 시선을 모은다. */
+.book-page.cover-page[data-theme="poetry"] {
+  align-items: flex-start;
+  background: #f2eee5;
+  color: #273d3b;
+  justify-content: flex-start;
+  padding: 12% 11%;
+  print-color-adjust: exact;
+  text-align: left;
+}
+.book-page.cover-page[data-theme="poetry"]::before {
+  background: #ad8571;
+  content: "";
+  height: 1px;
+  left: 11%;
+  position: absolute;
+  right: 11%;
+  top: 15%;
+}
+.book-page.cover-page[data-theme="poetry"]::after {
+  aspect-ratio: 1;
+  background: #d6ad96;
+  border: 0;
+  border-radius: 50%;
+  bottom: 13%;
+  content: "";
+  height: auto;
+  inset: auto -7% 13% auto;
+  opacity: .72;
+  pointer-events: none;
+  width: 47%;
+}
+.book-page.cover-page[data-theme="poetry"] h1 {
+  color: #273d3b;
+  font-size: 2.45em;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -.065em;
+  line-height: 1.42;
+  margin: 27% 0 0;
+  max-width: 92%;
+  position: relative;
+  z-index: 1;
+}
+.book-page.cover-page[data-theme="poetry"] .cover-author {
+  border: 0;
+  color: #4b605c;
+  font-size: .9em;
+  letter-spacing: .12em;
+  margin: auto 0 0;
+  padding: 0;
+  position: relative;
+  text-align: left;
+  width: auto;
+  z-index: 1;
+}
