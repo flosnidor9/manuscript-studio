@@ -42,40 +42,29 @@
         <option value="a5-novel">A5 소설책 · 명조 10pt / 1.8</option>
         <option value="b5-essay">B5 에세이·실용서 · 명조 11pt / 1.9</option>
         <option value="a4-manuscript">A4 원고·교정 · 고딕 11pt / 1.7</option>
-        <option value="a5-compact">A5 휴대용 소설 · 명조 9pt / 1.6</option>
-        <option value="a5-large">A5 큰 글씨 책 · 명조 13pt / 1.9</option>
-        <option value="b5-poetry">B5 시집 · 명조 12pt / 2.1</option>
-        <option value="b5-report">B5 리포트 · 고딕 10pt / 1.6</option>
-        <option value="a4-workbook">A4 학습 자료 · 고딕 12pt / 1.8</option>
       </select>
       <p id="typesetting-preset-description" class="preset-description" aria-live="polite">원고에 맞는 설정을 고른 뒤에도 개별 항목을 조절할 수 있습니다.</p>
       <label for="font-size">본문 크기 <output id="font-size-value">10.5pt</output></label>
       <input id="font-size" type="range" min="8" max="18" value="10.5" step="0.5">
       <label for="line-height">줄 간격 <output id="line-height-value">1.8</output></label>
       <input id="line-height" type="range" min="1.2" max="2.4" value="1.8" step="0.1">
-      <label for="font-family">본문 글꼴</label>
-      <select id="font-family">
+      <label for="font-family-button">본문 글꼴</label>
+      <select id="font-family" hidden aria-hidden="true" tabindex="-1">
         <option value="serif">명조 계열</option>
         <option value="sans-serif">고딕 계열</option>
         <option value="monospace">고정폭</option>
-        <optgroup label="한글 글꼴 · 설치된 경우 사용">
-          <option value="noto-serif-kr">Noto Serif KR</option>
-          <option value="nanum-myeongjo">나눔명조</option>
-          <option value="batang">바탕</option>
-          <option value="noto-sans-kr">Noto Sans KR</option>
-          <option value="nanum-gothic">나눔고딕</option>
-          <option value="malgun-gothic">맑은 고딕</option>
-          <option value="apple-sd-gothic-neo">Apple SD Gothic Neo</option>
-        </optgroup>
-        <optgroup label="영문 글꼴 · 설치된 경우 사용">
-          <option value="georgia">Georgia</option>
-          <option value="times-new-roman">Times New Roman</option>
-          <option value="arial">Arial</option>
-          <option value="verdana">Verdana</option>
-          <option value="courier-new">Courier New</option>
-        </optgroup>
       </select>
-      <p class="hint">설치되지 않은 글꼴은 비슷한 기본 글꼴로 표시됩니다.</p>
+      <div class="font-picker" id="font-picker">
+        <button id="font-family-button" class="font-picker-button" type="button" aria-expanded="false" aria-controls="font-family-panel">명조 계열</button>
+        <div id="font-family-panel" class="font-picker-panel" hidden>
+          <label for="font-family-search" class="sr-only">글꼴 검색</label>
+          <input id="font-family-search" type="search" placeholder="글꼴 이름 검색" autocomplete="off">
+          <div id="font-family-options" class="font-picker-options" aria-label="본문 글꼴 선택"></div>
+        </div>
+      </div>
+      <p class="hint">설치 글꼴 목록을 읽으려면 아래 버튼을 누르고 브라우저 권한을 허용하세요. 글꼴 이름만 이 브라우저에 저장하며 외부로 전송하지 않습니다.</p>
+      <button id="load-local-fonts" type="button" aria-describedby="local-font-status">설치 글꼴 불러오기</button>
+      <p id="local-font-status" class="hint" role="status" aria-live="polite">목록을 아직 읽지 않았습니다. 기본 글꼴은 바로 사용할 수 있습니다.</p>
       <label for="paper-size">판형</label>
       <select id="paper-size">
         <option value="a5">A5</option>

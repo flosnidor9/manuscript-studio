@@ -3,7 +3,7 @@
   const { sanitizeImported } = window.ManuscriptStudio.model;
 
 
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const MAX_RECOVERY_POINTS = 12;
 
 function openDb() {
@@ -13,6 +13,7 @@ function openDb() {
       const db = request.result;
       if (!db.objectStoreNames.contains('documents')) db.createObjectStore('documents', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('trash')) db.createObjectStore('trash', { keyPath: 'id' });
+      if (!db.objectStoreNames.contains('localFontCache')) db.createObjectStore('localFontCache', { keyPath: 'key' });
       const recovery = db.objectStoreNames.contains('recoveryPoints') ? request.transaction.objectStore('recoveryPoints') : db.createObjectStore('recoveryPoints', { keyPath: 'id' });
       if (!recovery.indexNames.contains('documentId')) recovery.createIndex('documentId', 'documentId', { unique: false });
     };
@@ -46,6 +47,18 @@ function readLibrary(db) {
   const documents = tx.objectStore('documents').getAll();
   const trash = tx.objectStore('trash').getAll();
   return complete(tx).then(() => ({ documents: documents.result, trash: trash.result }));
+}
+
+function readLocalFontCache(db) {
+  const tx = db.transaction('localFontCache', 'readonly');
+  const request = tx.objectStore('localFontCache').get('installed-families');
+  return complete(tx).then(() => request.result || null);
+}
+
+function writeLocalFontCache(db, families) {
+  const tx = db.transaction('localFontCache', 'readwrite');
+  tx.objectStore('localFontCache').put({ key: 'installed-families', families, updatedAt: new Date().toISOString() });
+  return complete(tx);
 }
 
 function moveToTrash(db, deleted) {
@@ -94,5 +107,5 @@ async function migrateLegacyRecords(db, records) {
   return records.map(record => byId.get(record.id) || record);
 }
 
-  window.ManuscriptStudio.storage = { openDb, withDb, writeDocument, readLibrary, moveToTrash, restoreFromTrash, deleteFromTrash, storeRecoveryPoint, migrateLegacyRecords };
+  window.ManuscriptStudio.storage = { openDb, withDb, writeDocument, readLibrary, readLocalFontCache, writeLocalFontCache, moveToTrash, restoreFromTrash, deleteFromTrash, storeRecoveryPoint, migrateLegacyRecords };
 })();

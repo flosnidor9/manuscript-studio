@@ -1,16 +1,17 @@
 (() => {
   'use strict';
-  const { FONT_STACKS, markdownToBlocks } = window.ManuscriptStudio.model;
+  const { fontStackFor, markdownToBlocks } = window.ManuscriptStudio.model;
   const { isHangingPunctuation, isTrailingPunctuation, canHangPunctuation } = window.ManuscriptStudio.punctuation;
 
 
 function createPreview({ getDocument, preview, paperDescription, readEditableText, isReflowing }) {
   let previewDocumentId = null;
   const previewScrollPositions = new Map();
+  const pageBottomCache = new WeakMap();
   function documentBlocks() { return Array.isArray(getDocument().document.blocks) && getDocument().document.blocks.length ? getDocument().document.blocks : markdownToBlocks(getDocument().document.markdown); }
   function isEmptyManuscript(blocks) { return blocks.length === 1 && blocks[0].type === 'paragraph' && blocks[0].text === ''; }
-  function syncPagePadding(page) { const size = { a5: [148, 210], a4: [210, 297], b5: [176, 250] }[getDocument().typesetting.paperSize], bounds = page.getBoundingClientRect(), margins = getDocument().typesetting; if (!bounds.width || !bounds.height) return; const vertical = bounds.height * margins.marginVerticalMm / size[1], horizontal = bounds.width * margins.marginHorizontalMm / size[0]; page.style.setProperty('--page-padding-top', `${vertical}px`); page.style.setProperty('--page-padding-right', `${horizontal}px`); page.style.setProperty('--page-padding-bottom', `${vertical}px`); page.style.setProperty('--page-padding-left', `${horizontal}px`); }
-  function pageElement(className = 'manuscript-page') { const page = document.createElement('article'), size = { a5: [148, 210], a4: [210, 297], b5: [176, 250] }[getDocument().typesetting.paperSize], margins = getDocument().typesetting; page.className = `book-page ${className}`; page.dataset.paperSize = getDocument().typesetting.paperSize; page.dataset.theme = getDocument().typesetting.designTheme; page.style.fontSize = `${getDocument().typesetting.fontSizePt}pt`; page.style.lineHeight = getDocument().typesetting.lineHeight; page.style.fontFamily = FONT_STACKS[getDocument().typesetting.fontFamily]; const vertical = `${margins.marginVerticalMm / size[1] * 100}%`, horizontal = `${margins.marginHorizontalMm / size[0] * 100}%`; page.style.setProperty('--page-padding-top', vertical); page.style.setProperty('--page-padding-right', horizontal); page.style.setProperty('--page-padding-bottom', vertical); page.style.setProperty('--page-padding-left', horizontal); page.style.setProperty('--print-padding-top', `${margins.marginVerticalMm}mm`); page.style.setProperty('--print-padding-right', `${margins.marginHorizontalMm}mm`); page.style.setProperty('--print-padding-bottom', `${margins.marginVerticalMm}mm`); page.style.setProperty('--print-padding-left', `${margins.marginHorizontalMm}mm`); return page; }
+  function syncPagePadding(page) { pageBottomCache.delete(page); const size = { a5: [148, 210], a4: [210, 297], b5: [176, 250] }[getDocument().typesetting.paperSize], bounds = page.getBoundingClientRect(), margins = getDocument().typesetting; if (!bounds.width || !bounds.height) return; const vertical = bounds.height * margins.marginVerticalMm / size[1], horizontal = bounds.width * margins.marginHorizontalMm / size[0]; page.style.setProperty('--page-padding-top', `${vertical}px`); page.style.setProperty('--page-padding-right', `${horizontal}px`); page.style.setProperty('--page-padding-bottom', `${vertical}px`); page.style.setProperty('--page-padding-left', `${horizontal}px`); }
+  function pageElement(className = 'manuscript-page') { const page = document.createElement('article'), size = { a5: [148, 210], a4: [210, 297], b5: [176, 250] }[getDocument().typesetting.paperSize], margins = getDocument().typesetting; page.className = `book-page ${className}`; page.dataset.paperSize = getDocument().typesetting.paperSize; page.dataset.theme = getDocument().typesetting.designTheme; page.style.fontSize = `${getDocument().typesetting.fontSizePt}pt`; page.style.lineHeight = getDocument().typesetting.lineHeight; page.style.fontFamily = fontStackFor(getDocument().typesetting.fontFamily); const vertical = `${margins.marginVerticalMm / size[1] * 100}%`, horizontal = `${margins.marginHorizontalMm / size[0] * 100}%`; page.style.setProperty('--page-padding-top', vertical); page.style.setProperty('--page-padding-right', horizontal); page.style.setProperty('--page-padding-bottom', vertical); page.style.setProperty('--page-padding-left', horizontal); page.style.setProperty('--print-padding-top', `${margins.marginVerticalMm}mm`); page.style.setProperty('--print-padding-right', `${margins.marginHorizontalMm}mm`); page.style.setProperty('--print-padding-bottom', `${margins.marginVerticalMm}mm`); page.style.setProperty('--print-padding-left', `${margins.marginHorizontalMm}mm`); return page; }
   function staticSection(className) { const section = pageElement(className); section.contentEditable = 'false'; section.dataset.static = 'true'; return section; }
   function blockElement(block) { const node = document.createElement(block.type === 'heading' ? 'h1' : block.type === 'subheading' ? 'h2' : block.type === 'quote' ? 'blockquote' : 'p'); node.dataset.block = block.type; node.textContent = block.text.replace(/\r\n?/g, '\n'); return node; }
   function createManuscriptPage() { const page = pageElement(); page.contentEditable = 'true'; page.setAttribute('role', 'textbox'); page.setAttribute('aria-multiline', 'true'); page.setAttribute('aria-label', '원고 본문'); return page; }
@@ -62,7 +63,11 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
     node.normalize();
   }
   function fitsPage(page, node) {
-    const pageBottom = page.getBoundingClientRect().bottom - parseFloat(getComputedStyle(page).paddingBottom);
+    let pageBottom = pageBottomCache.get(page);
+    if (pageBottom === undefined) {
+      pageBottom = page.getBoundingClientRect().bottom - parseFloat(getComputedStyle(page).paddingBottom);
+      pageBottomCache.set(page, pageBottom);
+    }
     // A paragraph's bottom margin separates it from the next block. It does not
     // need to fit after the last line on a page.
     return node.getBoundingClientRect().bottom <= pageBottom + 1;

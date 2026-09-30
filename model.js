@@ -8,16 +8,49 @@ const ELLIPSIS_TEXT = '······';
 const ELLIPSIS_PATTERN = /\.{3,}|[⋯…]+/g;
 const normalizeEllipsisText = text => text.replace(ELLIPSIS_PATTERN, match => ELLIPSIS_TEXT + (match.startsWith('.') && match.length >= 4 ? '.' : ''));
 
-const FONT_STACKS = Object.freeze({ serif: '"Noto Serif KR", Batang, Georgia, serif', 'sans-serif': '"Noto Sans KR", "Malgun Gothic", Arial, sans-serif', monospace: 'Consolas, "Courier New", monospace', 'noto-serif-kr': '"Noto Serif KR", Batang, Georgia, serif', 'nanum-myeongjo': '"Nanum Myeongjo", Batang, Georgia, serif', batang: 'Batang, "Noto Serif KR", serif', 'noto-sans-kr': '"Noto Sans KR", "Malgun Gothic", Arial, sans-serif', 'nanum-gothic': '"Nanum Gothic", "Malgun Gothic", Arial, sans-serif', 'malgun-gothic': '"Malgun Gothic", "Noto Sans KR", Arial, sans-serif', 'apple-sd-gothic-neo': '"Apple SD Gothic Neo", "Noto Sans KR", sans-serif', georgia: 'Georgia, "Noto Serif KR", serif', 'times-new-roman': '"Times New Roman", "Noto Serif KR", serif', arial: 'Arial, "Noto Sans KR", sans-serif', verdana: 'Verdana, "Noto Sans KR", sans-serif', 'courier-new': '"Courier New", Consolas, monospace' });
+const FONT_STACKS = Object.freeze({
+  serif: '"Noto Serif KR", Batang, Georgia, serif',
+  'sans-serif': '"Noto Sans KR", "Malgun Gothic", Arial, sans-serif',
+  monospace: 'Consolas, "Courier New", monospace',
+  'noto-serif-kr': '"Noto Serif KR", Batang, Georgia, serif',
+  'nanum-myeongjo': '"Nanum Myeongjo", Batang, Georgia, serif',
+  batang: 'Batang, "Noto Serif KR", serif',
+  'hamchorom-batang': '"HCR Batang", "함초롬바탕", Batang, serif',
+  gungsuh: 'Gungsuh, 궁서, Batang, serif',
+  'noto-sans-kr': '"Noto Sans KR", "Malgun Gothic", Arial, sans-serif',
+  'nanum-gothic': '"Nanum Gothic", "Malgun Gothic", Arial, sans-serif',
+  'malgun-gothic': '"Malgun Gothic", "Noto Sans KR", Arial, sans-serif',
+  'apple-sd-gothic-neo': '"Apple SD Gothic Neo", "Noto Sans KR", sans-serif',
+  'nanum-square': '"NanumSquare", "Nanum Square", "Malgun Gothic", sans-serif',
+  'nanum-pen': '"Nanum Pen Script", "나눔손글씨 펜", cursive',
+  d2coding: '"D2Coding", "Nanum Gothic Coding", Consolas, monospace',
+  georgia: 'Georgia, "Noto Serif KR", serif',
+  'times-new-roman': '"Times New Roman", "Noto Serif KR", serif',
+  garamond: 'Garamond, "Noto Serif KR", Georgia, serif',
+  palatino: '"Palatino Linotype", Palatino, "Noto Serif KR", serif',
+  baskerville: 'Baskerville, "Noto Serif KR", Georgia, serif',
+  cambria: 'Cambria, "Noto Serif KR", Georgia, serif',
+  arial: 'Arial, "Noto Sans KR", sans-serif',
+  verdana: 'Verdana, "Noto Sans KR", sans-serif',
+  'trebuchet-ms': '"Trebuchet MS", "Noto Sans KR", sans-serif',
+  'helvetica-neue': '"Helvetica Neue", Helvetica, "Noto Sans KR", sans-serif',
+  'courier-new': '"Courier New", Consolas, monospace'
+});
+const LOCAL_FONT_PREFIX = 'local:';
+const localFontName = value => {
+  if (typeof value !== 'string' || !value.startsWith(LOCAL_FONT_PREFIX)) return null;
+  const name = value.slice(LOCAL_FONT_PREFIX.length);
+  return name.length > 0 && name.length <= 120 && name.trim() === name && !/[\u0000-\u001f\u007f\u2028\u2029]/.test(name) ? name : null;
+};
+const fontStackFor = value => {
+  if (Object.hasOwn(FONT_STACKS, value)) return FONT_STACKS[value];
+  const name = localFontName(value);
+  return name ? `"${name.replace(/["\\]/g, '\\$&')}", "Noto Serif KR", Batang, serif` : FONT_STACKS.serif;
+};
 const TYPESETTING_PRESETS = Object.freeze({
   'a5-novel': Object.freeze({ label: 'A5 소설책', description: 'A5 · 명조 계열 · 10pt · 줄 간격 1.8 · 가로 23 / 세로 26mm', fontSizePt: 10, lineHeight: 1.8, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 23, marginVerticalMm: 26 }),
   'b5-essay': Object.freeze({ label: 'B5 에세이·실용서', description: 'B5 · 명조 계열 · 11pt · 줄 간격 1.9 · 가로 20 / 세로 21mm', fontSizePt: 11, lineHeight: 1.9, fontFamily: 'serif', paperSize: 'b5', marginHorizontalMm: 20, marginVerticalMm: 21 }),
-  'a4-manuscript': Object.freeze({ label: 'A4 원고·교정', description: 'A4 · 고딕 계열 · 11pt · 줄 간격 1.7 · 가로 20 / 세로 25mm', fontSizePt: 11, lineHeight: 1.7, fontFamily: 'sans-serif', paperSize: 'a4', marginHorizontalMm: 20, marginVerticalMm: 25 }),
-  'a5-compact': Object.freeze({ label: 'A5 휴대용 소설', description: 'A5 · 명조 계열 · 9pt · 줄 간격 1.6 · 가로 15 / 세로 18mm', fontSizePt: 9, lineHeight: 1.6, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 15, marginVerticalMm: 18 }),
-  'a5-large': Object.freeze({ label: 'A5 큰 글씨 책', description: 'A5 · 명조 계열 · 13pt · 줄 간격 1.9 · 가로 18 / 세로 20mm', fontSizePt: 13, lineHeight: 1.9, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 18, marginVerticalMm: 20 }),
-  'b5-poetry': Object.freeze({ label: 'B5 시집', description: 'B5 · 명조 계열 · 12pt · 줄 간격 2.1 · 가로 28 / 세로 30mm', fontSizePt: 12, lineHeight: 2.1, fontFamily: 'serif', paperSize: 'b5', marginHorizontalMm: 28, marginVerticalMm: 30 }),
-  'b5-report': Object.freeze({ label: 'B5 리포트', description: 'B5 · 고딕 계열 · 10pt · 줄 간격 1.6 · 가로 18 / 세로 20mm', fontSizePt: 10, lineHeight: 1.6, fontFamily: 'sans-serif', paperSize: 'b5', marginHorizontalMm: 18, marginVerticalMm: 20 }),
-  'a4-workbook': Object.freeze({ label: 'A4 학습 자료', description: 'A4 · 고딕 계열 · 12pt · 줄 간격 1.8 · 가로 22 / 세로 24mm', fontSizePt: 12, lineHeight: 1.8, fontFamily: 'sans-serif', paperSize: 'a4', marginHorizontalMm: 22, marginVerticalMm: 24 })
+  'a4-manuscript': Object.freeze({ label: 'A4 원고·교정', description: 'A4 · 고딕 계열 · 11pt · 줄 간격 1.7 · 가로 20 / 세로 25mm', fontSizePt: 11, lineHeight: 1.7, fontFamily: 'sans-serif', paperSize: 'a4', marginHorizontalMm: 20, marginVerticalMm: 25 })
 });
 
 const newDocument = () => ({ version: VERSION, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), meta: { title: '', author: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown: '', blocks: [{ type: 'paragraph', text: '' }] }, typesetting: { fontSizePt: 10.5, lineHeight: 1.8, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 18, marginVerticalMm: 19, designTheme: 'classic', showCover: true, showToc: true } });
@@ -56,9 +89,9 @@ function sanitizeImported(value) {
   const importedId = typeof value.id === 'string' ? value.id.trim().slice(0, 100) : '';
   const oldHorizontal = Math.round((clamp(Number(value.typesetting?.marginLeftMm), 8, 35, 20) + clamp(Number(value.typesetting?.marginRightMm), 8, 35, 16)) / 2);
   const oldVertical = Math.round((clamp(Number(value.typesetting?.marginTopMm), 8, 35, 18) + clamp(Number(value.typesetting?.marginBottomMm), 8, 35, 20)) / 2);
-  return { version: VERSION, id: importedId || newDocument().id, meta: { title: cleanText(value.meta?.title, 200), author: cleanText(value.meta?.author, 200), createdAt: typeof value.meta?.createdAt === 'string' ? value.meta.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown, blocks: markdownToBlocks(markdown) }, typesetting: { fontSizePt: clamp(Number(value.typesetting?.fontSizePt), 8, 18, 10.5), lineHeight: clamp(Number(value.typesetting?.lineHeight), 1.2, 2.4, 1.8), fontFamily: Object.hasOwn(FONT_STACKS, value.typesetting?.fontFamily) ? value.typesetting.fontFamily : 'serif', paperSize: ['a4','a5','b5'].includes(value.typesetting?.paperSize) ? value.typesetting.paperSize : 'a5', marginHorizontalMm: Math.round(clamp(Number(value.typesetting?.marginHorizontalMm), 8, 35, oldHorizontal)), marginVerticalMm: Math.round(clamp(Number(value.typesetting?.marginVerticalMm), 8, 35, oldVertical)), designTheme: ['classic', 'essay', 'poetry', 'noir', 'editorial'].includes(value.typesetting?.designTheme) ? value.typesetting.designTheme : 'classic', showCover: value.typesetting?.showCover !== false, showToc: value.typesetting?.showToc !== false } };
+  return { version: VERSION, id: importedId || newDocument().id, meta: { title: cleanText(value.meta?.title, 200), author: cleanText(value.meta?.author, 200), createdAt: typeof value.meta?.createdAt === 'string' ? value.meta.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown, blocks: markdownToBlocks(markdown) }, typesetting: { fontSizePt: clamp(Number(value.typesetting?.fontSizePt), 8, 18, 10.5), lineHeight: clamp(Number(value.typesetting?.lineHeight), 1.2, 2.4, 1.8), fontFamily: Object.hasOwn(FONT_STACKS, value.typesetting?.fontFamily) || localFontName(value.typesetting?.fontFamily) ? value.typesetting.fontFamily : 'serif', paperSize: ['a4','a5','b5'].includes(value.typesetting?.paperSize) ? value.typesetting.paperSize : 'a5', marginHorizontalMm: Math.round(clamp(Number(value.typesetting?.marginHorizontalMm), 8, 35, oldHorizontal)), marginVerticalMm: Math.round(clamp(Number(value.typesetting?.marginVerticalMm), 8, 35, oldVertical)), designTheme: ['classic', 'essay', 'poetry', 'noir', 'editorial'].includes(value.typesetting?.designTheme) ? value.typesetting.designTheme : 'classic', showCover: value.typesetting?.showCover !== false, showToc: value.typesetting?.showToc !== false } };
 }
 function clamp(n, min, max, fallback) { return Number.isFinite(n) && n >= min && n <= max ? n : fallback; }
 
-  window.ManuscriptStudio.model = { VERSION, MAX_MANUSCRIPT_CHARS, ELLIPSIS_TEXT, ELLIPSIS_PATTERN, normalizeEllipsisText, FONT_STACKS, TYPESETTING_PRESETS, newDocument, cleanText, validBlock, blocksToMarkdown, markdownToBlocks, sanitizeImported, clamp };
+  window.ManuscriptStudio.model = { VERSION, MAX_MANUSCRIPT_CHARS, ELLIPSIS_TEXT, ELLIPSIS_PATTERN, normalizeEllipsisText, FONT_STACKS, LOCAL_FONT_PREFIX, localFontName, fontStackFor, TYPESETTING_PRESETS, newDocument, cleanText, validBlock, blocksToMarkdown, markdownToBlocks, sanitizeImported, clamp };
 })();
