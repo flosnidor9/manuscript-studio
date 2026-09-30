@@ -44,6 +44,9 @@
         <option value="a4-manuscript">A4 원고·교정 · 고딕 11pt / 1.7</option>
       </select>
       <p id="typesetting-preset-description" class="preset-description" aria-live="polite">원고에 맞는 설정을 고른 뒤에도 개별 항목을 조절할 수 있습니다.</p>
+      <details class="settings-section">
+        <summary>본문 글꼴과 간격</summary>
+        <div class="settings-section-content">
       <label for="font-size">본문 크기 <output id="font-size-value">10.5pt</output></label>
       <input id="font-size" type="range" min="8" max="18" value="10.5" step="0.5">
       <label for="line-height">줄 간격 <output id="line-height-value">1.8</output></label>
@@ -65,6 +68,11 @@
       <p class="hint">설치 글꼴 목록을 읽으려면 아래 버튼을 누르고 브라우저 권한을 허용하세요. 글꼴 이름만 이 브라우저에 저장하며 외부로 전송하지 않습니다.</p>
       <button id="load-local-fonts" type="button" aria-describedby="local-font-status">설치 글꼴 불러오기</button>
       <p id="local-font-status" class="hint" role="status" aria-live="polite">목록을 아직 읽지 않았습니다. 기본 글꼴은 바로 사용할 수 있습니다.</p>
+        </div>
+      </details>
+      <details class="settings-section">
+        <summary>판형과 여백</summary>
+        <div class="settings-section-content">
       <label for="paper-size">판형</label>
       <select id="paper-size">
         <option value="a5">A5</option>
@@ -72,12 +80,41 @@
         <option value="b5">B5</option>
       </select>
       <fieldset class="margin-controls">
-        <legend>여백</legend>
+        <legend class="sr-only">여백</legend>
         <div class="margin-grid">
           <label for="margin-horizontal">가로 (왼쪽·오른쪽) <output id="margin-horizontal-value">18mm</output><input id="margin-horizontal" type="range" min="8" max="35" value="18" step="1"></label>
           <label for="margin-vertical">세로 (위·아래) <output id="margin-vertical-value">19mm</output><input id="margin-vertical" type="range" min="8" max="35" value="19" step="1"></label>
         </div>
       </fieldset>
+        </div>
+      </details>
+      <details class="settings-section">
+        <summary>머릿말 · 꼬리말</summary>
+        <div class="settings-section-content">
+      <fieldset class="running-design">
+        <legend class="sr-only">머릿말 · 꼬리말</legend>
+        <p class="hint">본문 페이지에 표시됩니다. {제목}, {저자}, {쪽수}를 사용할 수 있습니다.</p>
+        <div class="running-controls">
+          <label for="running-header-text">머릿말 내용</label>
+          <input id="running-header-text" type="text" maxlength="120" placeholder="예: {제목}">
+          <label for="running-header-align">머릿말 위치</label>
+          <select id="running-header-align"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
+          <label for="running-header-rule">머릿말 아래 줄</label>
+          <select id="running-header-rule"><option value="none">없음</option><option value="solid">일반 줄</option><option value="double">두 줄</option><option value="dashed">점선</option><option value="dotted">도트 줄</option></select>
+          <label for="running-header-width">줄 두께 <output id="running-header-width-value">1px</output></label>
+          <input id="running-header-width" type="range" min="1" max="6" step="1" value="1">
+          <label for="running-footer-text">꼬리말 내용</label>
+          <input id="running-footer-text" type="text" maxlength="120" placeholder="예: {쪽수}">
+          <label for="running-footer-align">꼬리말 위치</label>
+          <select id="running-footer-align"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select>
+          <label for="running-footer-rule">꼬리말 위 줄</label>
+          <select id="running-footer-rule"><option value="none">없음</option><option value="solid">일반 줄</option><option value="double">두 줄</option><option value="dashed">점선</option><option value="dotted">도트 줄</option></select>
+          <label for="running-footer-width">줄 두께 <output id="running-footer-width-value">1px</output></label>
+          <input id="running-footer-width" type="range" min="1" max="6" step="1" value="1">
+        </div>
+      </fieldset>
+        </div>
+      </details>
       <fieldset class="book-design">
         <legend>책 구성</legend>
         <label for="document-author">저자명</label>

@@ -2,7 +2,7 @@
   'use strict';
   window.ManuscriptStudio = window.ManuscriptStudio || Object.create(null);
 
-const VERSION = 2;
+const VERSION = 3;
 const MAX_MANUSCRIPT_CHARS = 250_000;
 const ELLIPSIS_TEXT = '······';
 const ELLIPSIS_PATTERN = /\.{3,}|[⋯…]+/g;
@@ -53,7 +53,9 @@ const TYPESETTING_PRESETS = Object.freeze({
   'a4-manuscript': Object.freeze({ label: 'A4 원고·교정', description: 'A4 · 고딕 계열 · 11pt · 줄 간격 1.7 · 가로 20 / 세로 25mm', fontSizePt: 11, lineHeight: 1.7, fontFamily: 'sans-serif', paperSize: 'a4', marginHorizontalMm: 20, marginVerticalMm: 25 })
 });
 
-const newDocument = () => ({ version: VERSION, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), meta: { title: '', author: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown: '', blocks: [{ type: 'paragraph', text: '' }] }, typesetting: { fontSizePt: 10.5, lineHeight: 1.8, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 18, marginVerticalMm: 19, designTheme: 'classic', showCover: true, showToc: true } });
+const defaultRunning = () => ({ text: '', align: 'center', rule: 'none', ruleWidth: 1 });
+const sanitizeRunning = value => ({ text: cleanText(value?.text, 120).replace(/[\r\n\u0000-\u001f\u007f]/g, ' '), align: ['left', 'center', 'right'].includes(value?.align) ? value.align : 'center', rule: ['none', 'solid', 'double', 'dashed', 'dotted'].includes(value?.rule) ? value.rule : 'none', ruleWidth: Math.round(clamp(Number(value?.ruleWidth), 1, 6, 1)) });
+const newDocument = () => ({ version: VERSION, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), meta: { title: '', author: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown: '', blocks: [{ type: 'paragraph', text: '' }] }, typesetting: { fontSizePt: 10.5, lineHeight: 1.8, fontFamily: 'serif', paperSize: 'a5', marginHorizontalMm: 18, marginVerticalMm: 19, designTheme: 'classic', showCover: true, showToc: true, header: defaultRunning(), footer: defaultRunning() } });
 const cleanText = (value, max = MAX_MANUSCRIPT_CHARS) => typeof value === 'string' ? value.slice(0, max) : '';
 const validBlock = block => block && ['paragraph', 'heading', 'subheading', 'quote'].includes(block.type) && typeof block.text === 'string';
 function blocksToMarkdown(blocks) { return blocks.map(block => `${block.type === 'heading' ? '# ' : block.type === 'subheading' ? '## ' : block.type === 'quote' ? '> ' : ''}${block.text}`).join('\n\n'); }
@@ -82,14 +84,14 @@ function markdownToBlocks(markdown) {
   return blocks.slice(0, 2000);
 }
 function sanitizeImported(value) {
-  if (!value || typeof value !== 'object' || ![1, VERSION].includes(value.version) || !value.document) throw new Error('지원하지 않는 프로젝트 형식입니다.');
+  if (!value || typeof value !== 'object' || ![1, 2, VERSION].includes(value.version) || !value.document) throw new Error('지원하지 않는 프로젝트 형식입니다.');
   const storedBlocks = Array.isArray(value.document.blocks) ? value.document.blocks.filter(validBlock).slice(0, 2000).map(b => ({ type: b.type, text: cleanText(b.text) })) : [];
   if (!storedBlocks.length && typeof value.document.markdown !== 'string') throw new Error('가져올 원고가 없습니다.');
   const markdown = typeof value.document.markdown === 'string' ? cleanText(value.document.markdown) : blocksToMarkdown(storedBlocks);
   const importedId = typeof value.id === 'string' ? value.id.trim().slice(0, 100) : '';
   const oldHorizontal = Math.round((clamp(Number(value.typesetting?.marginLeftMm), 8, 35, 20) + clamp(Number(value.typesetting?.marginRightMm), 8, 35, 16)) / 2);
   const oldVertical = Math.round((clamp(Number(value.typesetting?.marginTopMm), 8, 35, 18) + clamp(Number(value.typesetting?.marginBottomMm), 8, 35, 20)) / 2);
-  return { version: VERSION, id: importedId || newDocument().id, meta: { title: cleanText(value.meta?.title, 200), author: cleanText(value.meta?.author, 200), createdAt: typeof value.meta?.createdAt === 'string' ? value.meta.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown, blocks: markdownToBlocks(markdown) }, typesetting: { fontSizePt: clamp(Number(value.typesetting?.fontSizePt), 8, 18, 10.5), lineHeight: clamp(Number(value.typesetting?.lineHeight), 1.2, 2.4, 1.8), fontFamily: Object.hasOwn(FONT_STACKS, value.typesetting?.fontFamily) || localFontName(value.typesetting?.fontFamily) ? value.typesetting.fontFamily : 'serif', paperSize: ['a4','a5','b5'].includes(value.typesetting?.paperSize) ? value.typesetting.paperSize : 'a5', marginHorizontalMm: Math.round(clamp(Number(value.typesetting?.marginHorizontalMm), 8, 35, oldHorizontal)), marginVerticalMm: Math.round(clamp(Number(value.typesetting?.marginVerticalMm), 8, 35, oldVertical)), designTheme: ['classic', 'essay', 'poetry', 'noir', 'editorial'].includes(value.typesetting?.designTheme) ? value.typesetting.designTheme : 'classic', showCover: value.typesetting?.showCover !== false, showToc: value.typesetting?.showToc !== false } };
+  return { version: VERSION, id: importedId || newDocument().id, meta: { title: cleanText(value.meta?.title, 200), author: cleanText(value.meta?.author, 200), createdAt: typeof value.meta?.createdAt === 'string' ? value.meta.createdAt : new Date().toISOString(), updatedAt: new Date().toISOString() }, document: { markdown, blocks: markdownToBlocks(markdown) }, typesetting: { fontSizePt: clamp(Number(value.typesetting?.fontSizePt), 8, 18, 10.5), lineHeight: clamp(Number(value.typesetting?.lineHeight), 1.2, 2.4, 1.8), fontFamily: Object.hasOwn(FONT_STACKS, value.typesetting?.fontFamily) || localFontName(value.typesetting?.fontFamily) ? value.typesetting.fontFamily : 'serif', paperSize: ['a4','a5','b5'].includes(value.typesetting?.paperSize) ? value.typesetting.paperSize : 'a5', marginHorizontalMm: Math.round(clamp(Number(value.typesetting?.marginHorizontalMm), 8, 35, oldHorizontal)), marginVerticalMm: Math.round(clamp(Number(value.typesetting?.marginVerticalMm), 8, 35, oldVertical)), designTheme: ['classic', 'essay', 'poetry', 'noir', 'editorial'].includes(value.typesetting?.designTheme) ? value.typesetting.designTheme : 'classic', showCover: value.typesetting?.showCover !== false, showToc: value.typesetting?.showToc !== false, header: sanitizeRunning(value.typesetting?.header), footer: sanitizeRunning(value.typesetting?.footer) } };
 }
 function clamp(n, min, max, fallback) { return Number.isFinite(n) && n >= min && n <= max ? n : fallback; }
 

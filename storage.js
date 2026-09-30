@@ -70,7 +70,7 @@ function moveToTrash(db, deleted) {
 
 function restoreFromTrash(db, deleted, restored) {
   const tx = db.transaction(['documents', 'trash', 'recoveryPoints'], 'readwrite');
-  if (deleted.version === 1) tx.objectStore('recoveryPoints').put({ id: `${restored.id}:migration:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: restored.id, reason: '삭제 원고 이전 버전 백업', createdAt: new Date().toISOString(), data: deleted });
+  if (deleted.version === 1 || deleted.version === 2) tx.objectStore('recoveryPoints').put({ id: `${restored.id}:migration:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: restored.id, reason: '삭제 원고 이전 버전 백업', createdAt: new Date().toISOString(), data: deleted });
   tx.objectStore('documents').put(restored);
   tx.objectStore('trash').delete(restored.id);
   return complete(tx);
@@ -93,13 +93,13 @@ function storeRecoveryPoint(db, record, reason) {
 }
 
 async function migrateLegacyRecords(db, records) {
-  const legacy = records.filter(record => record?.version === 1);
+  const legacy = records.filter(record => record?.version === 1 || record?.version === 2);
   if (!legacy.length) return records;
   const converted = legacy.flatMap(record => { try { return [{ original: record, next: sanitizeImported(record) }]; } catch (_) { return []; } });
   if (!converted.length) return records;
   const tx = db.transaction(['documents', 'recoveryPoints'], 'readwrite');
   for (const { original, next } of converted) {
-    tx.objectStore('recoveryPoints').put({ id: `${next.id}:migration:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: next.id, reason: '여백 설정 이전 버전 백업', createdAt: new Date().toISOString(), data: original });
+    tx.objectStore('recoveryPoints').put({ id: `${next.id}:migration:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: next.id, reason: '원고 설정 이전 버전 백업', createdAt: new Date().toISOString(), data: original });
     tx.objectStore('documents').put(next);
   }
   await complete(tx);
