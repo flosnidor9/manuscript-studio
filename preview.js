@@ -61,6 +61,12 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
     punctuation.forEach(({ mark }) => { if (!mark.className) mark.replaceWith(document.createTextNode(mark.textContent)); });
     node.normalize();
   }
+  function fitsPage(page, node) {
+    const pageBottom = page.getBoundingClientRect().bottom - parseFloat(getComputedStyle(page).paddingBottom);
+    // A paragraph's bottom margin separates it from the next block. It does not
+    // need to fit after the last line on a page.
+    return node.getBoundingClientRect().bottom <= pageBottom + 1;
+  }
   function splitOverflowingBlock(page, node) {
     if (!['P', 'BLOCKQUOTE'].includes(node.tagName)) return null;
     const text = node.textContent;
@@ -69,7 +75,7 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
       node.textContent = text.slice(0, middle);
-      if (page.scrollHeight <= page.clientHeight + 1) { fit = middle; low = middle + 1; } else high = middle - 1;
+      if (fitsPage(page, node)) { fit = middle; low = middle + 1; } else high = middle - 1;
     }
     fit = /[\uDC00-\uDFFF]/.test(text[fit] || '') ? fit - 1 : fit;
     let splitAt = fit, hanging = false;
@@ -85,7 +91,7 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
         mark.className = 'hanging-punctuation';
         mark.textContent = text.slice(start, end);
         node.append(mark);
-        if (page.scrollHeight <= page.clientHeight + 1) { splitAt = end; hanging = true; }
+        if (fitsPage(page, node)) { splitAt = end; hanging = true; }
         else splitAt = start - 1;
       } else splitAt = start - 1;
       if (splitAt > 0 && /[\uDC00-\uDFFF]/.test(text[splitAt])) splitAt -= 1;
@@ -99,7 +105,7 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
     continuation.dataset.flowContinuation = 'true';
     return continuation;
   }
-  function paginatePreview() { const blocks = [...preview.querySelectorAll('.manuscript-page:not([data-static]) > *')].filter(node => !node.dataset.static); blocks.forEach(node => { node.textContent = readEditableText(node); delete node.dataset.hangingEnd; }); const allPages = [...preview.querySelectorAll('.book-page')]; allPages.forEach(syncPagePadding); const pages = allPages.filter(page => !page.dataset.static); const first = pages[0] || createManuscriptPage(), staticBlocks = [...first.querySelectorAll(':scope > [data-static]')]; if (!first.isConnected) { preview.append(first); syncPagePadding(first); } pages.forEach(page => page.replaceChildren()); first.append(...staticBlocks); let page = first; for (let index = 0; index < blocks.length; index += 1) { const node = blocks[index]; page.append(node); if (page.scrollHeight <= page.clientHeight + 1) continue; const continuation = splitOverflowingBlock(page, node); if (continuation) { blocks.splice(index + 1, 0, continuation); page = createManuscriptPage(); preview.append(page); syncPagePadding(page); continue; } if (page.childElementCount > 1) { page = createManuscriptPage(); preview.append(page); syncPagePadding(page); page.append(node); } } if (!first.childElementCount) first.append(blockElement({ type: 'paragraph', text: '' })); [...preview.querySelectorAll('.manuscript-page')].slice(1).forEach(page => { if (!page.childElementCount) page.remove(); }); }
+  function paginatePreview() { const blocks = [...preview.querySelectorAll('.manuscript-page:not([data-static]) > *')].filter(node => !node.dataset.static); blocks.forEach(node => { node.textContent = readEditableText(node); delete node.dataset.hangingEnd; }); const allPages = [...preview.querySelectorAll('.book-page')]; allPages.forEach(syncPagePadding); const pages = allPages.filter(page => !page.dataset.static); const first = pages[0] || createManuscriptPage(), staticBlocks = [...first.querySelectorAll(':scope > [data-static]')]; if (!first.isConnected) { preview.append(first); syncPagePadding(first); } pages.forEach(page => page.replaceChildren()); first.append(...staticBlocks); let page = first; for (let index = 0; index < blocks.length; index += 1) { const node = blocks[index]; page.append(node); if (fitsPage(page, node)) continue; const continuation = splitOverflowingBlock(page, node); if (continuation) { blocks.splice(index + 1, 0, continuation); page = createManuscriptPage(); preview.append(page); syncPagePadding(page); continue; } if (page.childElementCount > 1) { page = createManuscriptPage(); preview.append(page); syncPagePadding(page); page.append(node); } } if (!first.childElementCount) first.append(blockElement({ type: 'paragraph', text: '' })); [...preview.querySelectorAll('.manuscript-page')].slice(1).forEach(page => { if (!page.childElementCount) page.remove(); }); }
   const paginatePreviewUnsafe = paginatePreview;
   paginatePreview = () => { paginatePreviewUnsafe(); preview.querySelectorAll('.manuscript-page > [data-block]').forEach(decorateWrappedPunctuation); updateToc(); };
   function chapterPageNumbers() { const pages = [...preview.querySelectorAll('.book-page')]; return [...preview.querySelectorAll('.manuscript-page > h1[data-block="heading"]')].map(chapter => pages.indexOf(chapter.closest('.book-page')) + 1); }

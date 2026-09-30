@@ -78,7 +78,42 @@ function createEditor({ getDocument, preview, readEditableText, getIsComposing, 
   function previewHasOverflow() { return [...preview.querySelectorAll('.manuscript-page')].some(page => page.scrollHeight > page.clientHeight + 1); }
   function syncEditablePreview() { const caret = captureCaret(), pagesBefore = [...preview.querySelectorAll('.manuscript-page')], pageBefore = pagesBefore.indexOf(caret?.block?.closest('.manuscript-page')), pane = preview.closest('.preview-pane'), scrollTop = pane?.scrollTop, blocks = []; [...preview.querySelectorAll('.manuscript-page > *')].filter(node => !node.dataset.static).forEach(node => { const block = { type: node.tagName === 'H1' ? 'heading' : node.tagName === 'H2' ? 'subheading' : node.tagName === 'BLOCKQUOTE' ? 'quote' : 'paragraph', text: cleanText(readEditableText(node)) }; const previous = blocks.at(-1); if (node.dataset.flowContinuation && previous?.type === block.type) previous.text += block.text; else blocks.push(block); }); getDocument().document.blocks = blocks.length ? blocks.slice(0, 2000) : [{ type: 'paragraph', text: '' }]; getDocument().document.markdown = blocksToMarkdown(getDocument().document.blocks); preview.dataset.empty = String(isEmptyManuscript(getDocument().document.blocks)); updateToc(); setReflowing(true); paginatePreview(); const restoredBlock = restoreCaret(caret); if (pane) pane.scrollTop = scrollTop; const pageAfter = [...preview.querySelectorAll('.manuscript-page')].indexOf(restoredBlock?.closest('.manuscript-page')); if (pageBefore !== -1 && pageAfter !== -1 && pageBefore !== pageAfter) scrollToCaretPage(restoredBlock); setReflowing(false); captureHistory(); updateStats(); scheduleSave(); }
   function splitCurrentBlock() { const selection = getSelection(), block = currentEditableBlock(); if (!selection?.isCollapsed || !selection.rangeCount || !block) return false; const range = selection.getRangeAt(0).cloneRange(); try { range.selectNodeContents(block); range.setEnd(selection.anchorNode, selection.anchorOffset); } catch (_) { return false; } const text = readEditableText(block), offset = readEditableText(range.cloneContents()).length, next = blockElement({ type: 'paragraph', text: text.slice(offset) }); block.textContent = text.slice(0, offset); block.after(next); setCaret(next, 0); syncEditablePreview(); return true; }
-  function splitEditableBlock(event) { if (getIsComposing() || event.getIsComposing()) return; const selection = getSelection(); if (!selection?.isCollapsed) { const anchorPage = selection.anchorNode?.parentElement?.closest('.manuscript-page'), focusPage = selection.focusNode?.parentElement?.closest('.manuscript-page'); if (anchorPage && focusPage && anchorPage !== focusPage) { if (event.inputType === 'deleteContentBackward' || event.inputType === 'deleteContentForward' || event.inputType === 'deleteByCut') { event.preventDefault(); getDocument().document.blocks = [{ type: 'paragraph', text: '' }]; getDocument().document.markdown = ''; captureHistory(); renderPreview(); updateStats(); scheduleSave(); const firstBlock = preview.querySelector('.manuscript-page > *:not([data-static])'); if (firstBlock) setCaret(firstBlock, 0); } else if (event.inputType === 'insertText') { event.preventDefault(); const text = event.data || ''; getDocument().document.blocks = [{ type: 'paragraph', text }]; getDocument().document.markdown = blocksToMarkdown(getDocument().document.blocks); captureHistory(); renderPreview(); updateStats(); scheduleSave(); const firstBlock = preview.querySelector('.manuscript-page > *:not([data-static])'); if (firstBlock) setCaret(firstBlock, text.length); } } return; } const block = currentEditableBlock(); if (!selection?.rangeCount || !block || event.inputType !== 'deleteContentBackward') return; const range = selection.getRangeAt(0).cloneRange(); try { range.selectNodeContents(block); range.setEnd(selection.anchorNode, selection.anchorOffset); } catch (_) { return; } if (range.toString().length) return; if (block.matches('h1, h2, blockquote')) { event.preventDefault(); const replacement = blockElement({ type: 'paragraph', text: '' }); block.replaceWith(replacement); setCaret(replacement, 0); syncEditablePreview(); return; } const blocks = [...preview.querySelectorAll('.manuscript-page > *')].filter(node => !node.dataset.static), index = blocks.indexOf(block), previous = blocks[index - 1]; if (!previous) { event.preventDefault(); return; } if (previous.closest('.manuscript-page') === block.closest('.manuscript-page')) return; event.preventDefault(); if (block.dataset.flowContinuation) { const text = previous.textContent; if (!text.length) return; previous.textContent = text.slice(0, -1); setCaret(previous, previous.textContent.length); } else { const caretOffset = previous.textContent.length; previous.textContent += block.textContent; block.remove(); setCaret(previous, caretOffset); } syncEditablePreview(); }
+  function manuscriptBlocks() { return [...preview.querySelectorAll('.manuscript-page > [data-block]')]; }
+  function selectAllManuscript() {
+    const blocks = manuscriptBlocks();
+    if (!blocks.length) return;
+    const range = document.createRange();
+    range.setStart(blocks[0], 0);
+    range.setEnd(blocks.at(-1), blocks.at(-1).childNodes.length);
+    const selection = getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+  function isEntireManuscriptSelected() {
+    const selection = getSelection(), blocks = manuscriptBlocks();
+    if (!selection?.rangeCount || selection.isCollapsed || !blocks.length) return false;
+    const whole = document.createRange();
+    whole.setStart(blocks[0], 0);
+    whole.setEnd(blocks.at(-1), blocks.at(-1).childNodes.length);
+    const selected = selection.getRangeAt(0);
+    return selected.compareBoundaryPoints(Range.START_TO_START, whole) <= 0 && selected.compareBoundaryPoints(Range.END_TO_END, whole) >= 0;
+  }
+  function replaceEntireManuscript(text = '') {
+    getDocument().document.blocks = [{ type: 'paragraph', text }];
+    getDocument().document.markdown = blocksToMarkdown(getDocument().document.blocks);
+    captureHistory();
+    renderPreview();
+    updateStats();
+    scheduleSave();
+    const firstBlock = manuscriptBlocks()[0];
+    if (firstBlock) { firstBlock.closest('.manuscript-page').focus({ preventScroll: true }); setCaret(firstBlock, text.length); }
+  }
+  function deleteEntireManuscriptOnKeydown(event) {
+    if (getIsComposing() || event.isComposing || !['Backspace', 'Delete'].includes(event.key) || !isEntireManuscriptSelected()) return;
+    event.preventDefault();
+    replaceEntireManuscript();
+  }
+  function splitEditableBlock(event) { if (getIsComposing() || event.isComposing) return; if (isEntireManuscriptSelected()) { if (['deleteContentBackward', 'deleteContentForward', 'deleteByCut'].includes(event.inputType)) { event.preventDefault(); replaceEntireManuscript(); return; } if (event.inputType === 'insertText') { event.preventDefault(); replaceEntireManuscript(event.data || ''); return; } } const selection = getSelection(); if (!selection?.isCollapsed) { const anchorPage = selection.anchorNode?.parentElement?.closest('.manuscript-page'), focusPage = selection.focusNode?.parentElement?.closest('.manuscript-page'); if (anchorPage && focusPage && anchorPage !== focusPage) { if (event.inputType === 'deleteContentBackward' || event.inputType === 'deleteContentForward' || event.inputType === 'deleteByCut') { event.preventDefault(); replaceEntireManuscript(); } else if (event.inputType === 'insertText') { event.preventDefault(); replaceEntireManuscript(event.data || ''); } } return; } const block = currentEditableBlock(); if (!selection?.rangeCount || !block || event.inputType !== 'deleteContentBackward') return; const range = selection.getRangeAt(0).cloneRange(); try { range.selectNodeContents(block); range.setEnd(selection.anchorNode, selection.anchorOffset); } catch (_) { return; } if (range.toString().length) return; if (block.matches('h1, h2, blockquote')) { event.preventDefault(); const replacement = blockElement({ type: 'paragraph', text: '' }); block.replaceWith(replacement); setCaret(replacement, 0); syncEditablePreview(); return; } const blocks = [...preview.querySelectorAll('.manuscript-page > *')].filter(node => !node.dataset.static), index = blocks.indexOf(block), previous = blocks[index - 1]; if (!previous) { event.preventDefault(); return; } if (previous.closest('.manuscript-page') === block.closest('.manuscript-page')) return; event.preventDefault(); if (block.dataset.flowContinuation) { const text = previous.textContent; if (!text.length) return; previous.textContent = text.slice(0, -1); setCaret(previous, previous.textContent.length); } else { const caretOffset = previous.textContent.length; previous.textContent += block.textContent; block.remove(); setCaret(previous, caretOffset); } syncEditablePreview(); }
   function currentEditableBlock() { const selection = getSelection(); let node = selection?.anchorNode; if (!node) return null; node = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement; let block = node?.closest?.('[data-block], p, h1, h2, blockquote, div'); if (!block && node?.matches?.('.manuscript-page')) { const children = node.children, index = Math.min(selection.anchorOffset, children.length - 1); block = children[index] || null; } return block && preview.contains(block) && !block.dataset.static ? block : null; }
   function applyMarkdownShortcut() { const selection = getSelection(), block = currentEditableBlock(); if (!block) return; const marker = block.textContent.replace(/\u00a0/g, ' '); const type = marker === '# ' ? 'heading' : marker === '## ' ? 'subheading' : marker === '> ' ? 'quote' : ''; if (!type) return; const replacement = document.createElement(type === 'heading' ? 'h1' : type === 'subheading' ? 'h2' : 'blockquote'); replacement.dataset.block = type; block.replaceWith(replacement); const range = document.createRange(); range.selectNodeContents(replacement); range.collapse(false); selection.removeAllRanges(); selection.addRange(range); }
   function normalizeEditableEllipses(allBlocks = false) {
@@ -97,6 +132,10 @@ function createEditor({ getDocument, preview, readEditableText, getIsComposing, 
     const page = event.target.closest?.('.manuscript-page');
     if (!page || page.dataset.static) return;
     event.preventDefault();
+    if (isEntireManuscriptSelected()) {
+      replaceEntireManuscript(normalizeEllipsisText(event.clipboardData?.getData('text/plain') || '').replace(/\r\n?/g, '\n'));
+      return;
+    }
     const selection = getSelection();
     if (!selection?.rangeCount) return;
     const range = selection.getRangeAt(0);
@@ -118,7 +157,7 @@ function createEditor({ getDocument, preview, readEditableText, getIsComposing, 
     applyMarkdownShortcut();
     syncEditablePreview();
   }
-  return { captureCaret, setCaret, focusClickedEmptyBlock, scrollToCaretPage, syncEditablePreview, splitCurrentBlock, splitEditableBlock, applyMarkdownShortcut, normalizeEditableEllipses, pasteManuscriptText };
+  return { captureCaret, setCaret, focusClickedEmptyBlock, scrollToCaretPage, syncEditablePreview, splitCurrentBlock, splitEditableBlock, selectAllManuscript, deleteEntireManuscriptOnKeydown, applyMarkdownShortcut, normalizeEditableEllipses, pasteManuscriptText };
 }
 
   window.ManuscriptStudio.editor = { createEditor };
