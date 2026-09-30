@@ -1,7 +1,10 @@
-import { FONT_STACKS, markdownToBlocks } from './model.js';
-import { isHangingPunctuation, isTrailingPunctuation, canHangPunctuation } from './punctuation.js';
+(() => {
+  'use strict';
+  const { FONT_STACKS, markdownToBlocks } = window.ManuscriptStudio.model;
+  const { isHangingPunctuation, isTrailingPunctuation, canHangPunctuation } = window.ManuscriptStudio.punctuation;
 
-export function createPreview({ getDocument, preview, paperDescription, readEditableText, isReflowing }) {
+
+function createPreview({ getDocument, preview, paperDescription, readEditableText, isReflowing }) {
   let previewDocumentId = null;
   const previewScrollPositions = new Map();
   function documentBlocks() { return Array.isArray(getDocument().document.blocks) && getDocument().document.blocks.length ? getDocument().document.blocks : markdownToBlocks(getDocument().document.markdown); }
@@ -105,3 +108,6 @@ export function createPreview({ getDocument, preview, paperDescription, readEdit
   function renderPreview() { if (isReflowing()) return; const pane = preview.closest('.preview-pane'); if (pane && previewDocumentId) previewScrollPositions.set(previewDocumentId, pane.scrollTop); const scrollTop = previewScrollPositions.get(getDocument().id) || 0; const paper = { a5: ['A5 · 148 × 210 mm', 'A5'], a4: ['A4 · 210 × 297 mm', 'A4'], b5: ['B5 · 176 × 250 mm', 'B5'] }[getDocument().typesetting.paperSize]; const blocks = documentBlocks(); getDocument().document.blocks = blocks; preview.replaceChildren(); preview.dataset.empty = String(isEmptyManuscript(blocks)); document.documentElement.style.setProperty('--print-size', paper[1]); paperDescription.textContent = paper[0]; if (getDocument().typesetting.showCover) { const cover = staticSection('cover-page'); const title = document.createElement('h1'); title.textContent = getDocument().meta.title || '제목 없는 원고'; const author = document.createElement('p'); author.className = 'cover-author'; author.textContent = getDocument().meta.author || '저자명'; cover.append(title, author); } if (getDocument().typesetting.showToc) preview.append(createTocSection(blocks)); const page = createManuscriptPage(); if (!getDocument().typesetting.showCover && getDocument().meta.title) { const title = document.createElement('h1'); title.className = 'book-title'; title.contentEditable = 'false'; title.dataset.static = 'true'; title.textContent = getDocument().meta.title; page.append(title); } (blocks.length ? blocks : [{ type: 'paragraph', text: '' }]).forEach(block => page.append(blockElement(block))); preview.append(page); paginatePreview(); if (pane) pane.scrollTop = scrollTop; previewDocumentId = getDocument().id; }
   return { renderPreview, paginatePreview, updateToc, blockElement, isEmptyManuscript };
 }
+
+  window.ManuscriptStudio.preview = { createPreview };
+})();

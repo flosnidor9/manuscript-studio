@@ -1,11 +1,11 @@
-import { createEditor } from './editor.js';
-import { createPreview } from './preview.js';
-import { ELLIPSIS_PATTERN, ELLIPSIS_TEXT, TYPESETTING_PRESETS, blocksToMarkdown, cleanText, newDocument, normalizeEllipsisText, sanitizeImported } from './model.js';
-import { withDb, writeDocument, readLibrary, moveToTrash, restoreFromTrash, deleteFromTrash, storeRecoveryPoint, migrateLegacyRecords } from './storage.js';
-import { safeFileName, downloadBlob, buildPdf, renderPagesForExport, canvasToBlob } from './export.js';
 
 (() => {
   'use strict';
+  const { createEditor } = window.ManuscriptStudio.editor;
+  const { createPreview } = window.ManuscriptStudio.preview;
+  const { ELLIPSIS_PATTERN, ELLIPSIS_TEXT, TYPESETTING_PRESETS, blocksToMarkdown, cleanText, newDocument, normalizeEllipsisText, sanitizeImported } = window.ManuscriptStudio.model;
+  const { withDb, writeDocument, readLibrary, moveToTrash, restoreFromTrash, deleteFromTrash, storeRecoveryPoint, migrateLegacyRecords } = window.ManuscriptStudio.storage;
+  const { safeFileName, downloadBlob, buildPdf, renderPagesForExport, canvasToBlob } = window.ManuscriptStudio.output;
   const MAX_IMPORT_BYTES = 5 * 1024 * 1024, SAVE_DELAY = 150;
   const $ = (id) => document.getElementById(id);
   const el = { title: $('document-title'), author: $('document-author'), designTheme: $('design-theme'), showCover: $('show-cover'), showToc: $('show-toc'), preview: $('book-preview'), list: $('document-list'), undoDelete: $('undo-delete-button'), toggleTrash: $('toggle-trash-button'), trashList: $('trash-list'), trashCount: $('trash-count'), status: $('save-status'), stats: $('document-stats'), file: $('import-file'), preset: $('typesetting-preset'), presetDescription: $('typesetting-preset-description'), fontSize: $('font-size'), lineHeight: $('line-height'), fontFamily: $('font-family'), paperSize: $('paper-size'), marginHorizontal: $('margin-horizontal'), marginVertical: $('margin-vertical'), findDialog: $('find-dialog'), findQuery: $('find-query'), replaceQuery: $('replace-query'), findCase: $('find-case-sensitive'), findRegex: $('find-regex'), findStatus: $('find-status') };

@@ -189,7 +189,7 @@
 - `export.js`: JSON/PDF/PNG 파일 생성에 쓰는 출력 도구
 - `punctuation.js`: 화면과 출력에 공통으로 쓰는 문장부호 규칙
 
-브라우저 기본 ES 모듈을 사용하므로 HTTP(S) 정적 서버에서 실행한다. Service Worker는 첫 정상 방문 뒤 이 모듈들을 오프라인 캐시에 저장한다.
+각 파일은 `ManuscriptStudio` 네임스페이스로 연결한다. 로컬 `index.html`을 직접 열어도 실행되며, HTTP(S)에서 첫 정상 방문을 마치면 Service Worker가 오프라인 사용을 위해 파일을 캐시에 저장한다.
 
 - 프런트엔드만으로 동작하는 정적 웹페이지
 - IndexedDB를 기본 저장소로 사용하고, 필요한 경우 Local Storage는 가벼운 UI 설정에만 사용

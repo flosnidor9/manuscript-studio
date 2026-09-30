@@ -1,6 +1,9 @@
-import { blocksToMarkdown, cleanText, normalizeEllipsisText } from './model.js';
+(() => {
+  'use strict';
+  const { blocksToMarkdown, cleanText, normalizeEllipsisText } = window.ManuscriptStudio.model;
 
-export function createEditor({ getDocument, preview, readEditableText, getIsComposing, setReflowing, renderPreview, paginatePreview, updateToc, blockElement, isEmptyManuscript, captureHistory, updateStats, scheduleSave }) {
+
+function createEditor({ getDocument, preview, readEditableText, getIsComposing, setReflowing, renderPreview, paginatePreview, updateToc, blockElement, isEmptyManuscript, captureHistory, updateStats, scheduleSave }) {
   function captureCaret() { const selection = getSelection(); if (!selection?.rangeCount || !selection.isCollapsed) return null; let node = selection.anchorNode?.nodeType === Node.ELEMENT_NODE ? selection.anchorNode : selection.anchorNode?.parentElement; const block = node?.closest?.('.manuscript-page > *'); if (!block || block.dataset.static) return null; const range = selection.getRangeAt(0).cloneRange(); try { range.selectNodeContents(block); range.setEnd(selection.anchorNode, selection.anchorOffset); const blockOffset = readEditableText(range.cloneContents()).length, blocks = [...preview.querySelectorAll('.manuscript-page > *')].filter(item => !item.dataset.static); return { block, blockOffset, offset: blocks.slice(0, blocks.indexOf(block)).reduce((total, item) => total + readEditableText(item).length, 0) + blockOffset }; } catch (_) { return null; } }
   function setCaret(block, offset) { const range = document.createRange(), walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT); let remaining = offset, textNode; while ((textNode = walker.nextNode())) { if (remaining <= textNode.length) { range.setStart(textNode, remaining); range.collapse(true); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); return true; } remaining -= textNode.length; } range.selectNodeContents(block); range.collapse(false); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); return true; }
   function focusPastedBlankLine(event, page, block) {
@@ -117,3 +120,6 @@ export function createEditor({ getDocument, preview, readEditableText, getIsComp
   }
   return { captureCaret, setCaret, focusClickedEmptyBlock, scrollToCaretPage, syncEditablePreview, splitCurrentBlock, splitEditableBlock, applyMarkdownShortcut, normalizeEditableEllipses, pasteManuscriptText };
 }
+
+  window.ManuscriptStudio.editor = { createEditor };
+})();

@@ -1,9 +1,12 @@
-import { sanitizeImported } from './model.js';
+(() => {
+  'use strict';
+  const { sanitizeImported } = window.ManuscriptStudio.model;
+
 
 const DB_VERSION = 3;
 const MAX_RECOVERY_POINTS = 12;
 
-export function openDb() {
+function openDb() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('write-supporter', DB_VERSION);
     request.onupgradeneeded = () => {
@@ -26,33 +29,33 @@ function complete(tx) {
   });
 }
 
-export async function withDb(action) {
+async function withDb(action) {
   const db = await openDb();
   try { return await action(db); }
   finally { db.close(); }
 }
 
-export function writeDocument(db, record) {
+function writeDocument(db, record) {
   const tx = db.transaction('documents', 'readwrite');
   tx.objectStore('documents').put(record);
   return complete(tx);
 }
 
-export function readLibrary(db) {
+function readLibrary(db) {
   const tx = db.transaction(['documents', 'trash'], 'readonly');
   const documents = tx.objectStore('documents').getAll();
   const trash = tx.objectStore('trash').getAll();
   return complete(tx).then(() => ({ documents: documents.result, trash: trash.result }));
 }
 
-export function moveToTrash(db, deleted) {
+function moveToTrash(db, deleted) {
   const tx = db.transaction(['documents', 'trash'], 'readwrite');
   tx.objectStore('trash').put(deleted);
   tx.objectStore('documents').delete(deleted.id);
   return complete(tx);
 }
 
-export function restoreFromTrash(db, deleted, restored) {
+function restoreFromTrash(db, deleted, restored) {
   const tx = db.transaction(['documents', 'trash', 'recoveryPoints'], 'readwrite');
   if (deleted.version === 1) tx.objectStore('recoveryPoints').put({ id: `${restored.id}:migration:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: restored.id, reason: '삭제 원고 이전 버전 백업', createdAt: new Date().toISOString(), data: deleted });
   tx.objectStore('documents').put(restored);
@@ -60,13 +63,13 @@ export function restoreFromTrash(db, deleted, restored) {
   return complete(tx);
 }
 
-export function deleteFromTrash(db, id) {
+function deleteFromTrash(db, id) {
   const tx = db.transaction('trash', 'readwrite');
   tx.objectStore('trash').delete(id);
   return complete(tx);
 }
 
-export function storeRecoveryPoint(db, record, reason) {
+function storeRecoveryPoint(db, record, reason) {
   const point = { id: `${record.id}:${Date.now()}:${Math.random().toString(36).slice(2)}`, documentId: record.id, reason, createdAt: new Date().toISOString(), data: record };
   const tx = db.transaction('recoveryPoints', 'readwrite');
   const store = tx.objectStore('recoveryPoints');
@@ -76,7 +79,7 @@ export function storeRecoveryPoint(db, record, reason) {
   return complete(tx);
 }
 
-export async function migrateLegacyRecords(db, records) {
+async function migrateLegacyRecords(db, records) {
   const legacy = records.filter(record => record?.version === 1);
   if (!legacy.length) return records;
   const converted = legacy.flatMap(record => { try { return [{ original: record, next: sanitizeImported(record) }]; } catch (_) { return []; } });
@@ -90,3 +93,6 @@ export async function migrateLegacyRecords(db, records) {
   const byId = new Map(converted.map(({ next }) => [next.id, next]));
   return records.map(record => byId.get(record.id) || record);
 }
+
+  window.ManuscriptStudio.storage = { openDb, withDb, writeDocument, readLibrary, moveToTrash, restoreFromTrash, deleteFromTrash, storeRecoveryPoint, migrateLegacyRecords };
+})();
