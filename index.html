@@ -20,6 +20,7 @@
         <label class="sr-only" for="export-format">저장 형식</label>
         <select id="export-format">
           <option value="pdf">PDF</option>
+          <option value="binding">무선제본 PDF</option>
           <option value="png">PNG</option>
           <option value="md">MD</option>
         </select>
@@ -189,10 +190,22 @@
       <p id="export-error-copy-status" class="export-error-copy-status" role="status" aria-live="polite"></p>
     </form>
   </dialog>
+  <dialog id="binding-dialog" class="binding-dialog" aria-labelledby="binding-heading">
+    <form method="dialog">
+      <div class="dialog-heading"><h2 id="binding-heading">무선제본용 PDF</h2><button type="submit" value="close" aria-label="닫기">×</button></div>
+      <p>본문은 낱장 순서로, 표지는 뒷표지·책등·앞표지 펼침면으로 각각 저장합니다. 뒷표지는 단색입니다. 도련은 모든 면에 적용됩니다.</p>
+      <label for="binding-bleed">도련 (mm)</label><input id="binding-bleed" type="number" min="0" max="10" step="0.5" value="3" required>
+      <label for="binding-caliper">종이 1장 두께 (mm)</label><input id="binding-caliper" type="number" min="0.04" max="0.5" step="0.01" value="0.1" required>
+      <p id="binding-calculation" role="status" aria-live="polite"></p>
+      <p class="hint">종이 두께와 책등 폭은 인쇄소 견적에 맞춰 확인하세요. 이 파일은 300dpi RGB 이미지 PDF이며 PDF/X·CMYK 파일은 아닙니다. 인쇄소가 요구하는 색상 프로파일과 PDF 규격은 별도 확인이 필요합니다.</p>
+      <div class="binding-actions"><button id="binding-interior-button" type="button">본문 PDF 저장</button><button id="binding-cover-button" type="button">표지 PDF 저장</button></div>
+    </form>
+  </dialog>
   <script src="model.js" defer></script>
   <script src="punctuation.js" defer></script>
   <script src="storage.js" defer></script>
   <script src="export.js" defer></script>
+  <script src="print_export.js" defer></script>
   <script src="preview.js" defer></script>
   <script src="editor.js" defer></script>
   <script src="app.js" defer></script>

@@ -154,3 +154,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .settings-section .margin-controls, .settings-section .running-design, .settings-section .book-design { border: 0; margin: 0; padding: 0; width: 100%; }
 .settings-section .margin-controls { margin-top: .75rem; }
 .settings-section .running-design .hint { margin-top: .2rem; }
+.binding-dialog { background: #fdfbf5; border: 1px solid #9daa9d; border-radius: 8px; color: #26382d; font-family: "Noto Serif KR", "Batang", Georgia, serif; max-width: min(31rem, calc(100vw - 2rem)); padding: 0; width: 100%; }
+.binding-dialog::backdrop { background: #17251d80; }
+.binding-dialog form { padding: 1.2rem; }
+.binding-dialog p { font-size: .78rem; line-height: 1.6; }
+.binding-dialog label { display: block; font-size: .75rem; margin: .85rem 0 .3rem; }
+.binding-dialog input[type="number"] { border: 1px solid #9daa9d; border-radius: 4px; font: inherit; padding: .45rem; width: 7rem; }
+.binding-dialog .hint { color: #5c685f; font-size: .71rem; }
+.binding-actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+.binding-actions button { background: #244b36; border-color: #244b36; border-radius: 4px; color: white; font-size: .75rem; padding: .6rem; }
+.binding-actions button:disabled { cursor: wait; opacity: .6; }

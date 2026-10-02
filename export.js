@@ -106,5 +106,5 @@
   async function renderPagesForExport(preview) { await document.fonts?.ready; const pages = [...preview.querySelectorAll('.book-page')]; if (!pages.length) throw new Error('저장할 페이지가 없습니다'); const previousZoom = preview.style.zoom; preview.dataset.exporting = 'true'; preview.style.zoom = '1'; try { const canvases = []; for (const page of pages) canvases.push(await rasterizePage(page)); return canvases; } finally { preview.style.zoom = previousZoom; delete preview.dataset.exporting; } }
   function canvasToBlob(canvas, type = 'image/png') { return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG 생성 실패')), type)); }
 
-  window.ManuscriptStudio.output = { safeFileName, downloadBlob, buildPdf, renderPagesForExport, canvasToBlob };
+  window.ManuscriptStudio.output = { safeFileName, downloadBlob, buildPdf, renderPagesForExport, rasterizePage, canvasToBlob };
 })();

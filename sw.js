@@ -1,5 +1,5 @@
-const CACHE = 'manuscript-studio-v39';
-const ASSETS = ['./', './index.html', './styles.css', './app.js', './model.js', './punctuation.js', './storage.js', './export.js', './preview.js', './editor.js'];
+const CACHE = 'manuscript-studio-v41';
+const ASSETS = ['./', './index.html', './styles.css', './app.js', './model.js', './punctuation.js', './storage.js', './export.js', './print_export.js', './preview.js', './editor.js'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
