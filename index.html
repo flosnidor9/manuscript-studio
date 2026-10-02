@@ -16,6 +16,15 @@
       <span id="save-status" role="status" aria-live="polite">준비됨</span>
     </div>
     <div class="toolbar" aria-label="문서 도구">
+      <div class="export-actions" role="group" aria-label="파일로 저장">
+        <label class="sr-only" for="export-format">저장 형식</label>
+        <select id="export-format">
+          <option value="pdf">PDF</option>
+          <option value="png">PNG</option>
+          <option value="md">MD</option>
+        </select>
+        <button id="save-file-button" type="button">저장</button>
+      </div>
       <button id="export-button" type="button">JSON 내보내기</button>
       <button id="import-button" type="button">JSON 가져오기</button>
       <input id="import-file" type="file" accept="application/json,.json" hidden>
@@ -131,11 +140,6 @@
         <label class="toggle-option"><input id="show-toc" type="checkbox"> 목차 넣기</label>
         <p class="hint">표지와 목차는 제목·저자명·장 제목으로 자동 구성됩니다. 장 제목은 <code># </code>로 입력하세요.</p>
       </fieldset>
-      <div class="export-actions">
-        <button id="print-button" type="button">PDF로 저장</button>
-        <button id="png-button" type="button">PNG로 저장</button>
-        <button id="markdown-button" type="button">MD로 저장</button>
-      </div>
     </aside>
 
     <section class="preview-pane" aria-labelledby="preview-heading">
