@@ -163,7 +163,8 @@
     }
   }
   const { renderPreview: drawPreview, paginatePreview, prepareNextPageForCaret, updateToc, decorateRunningMatter, blockElement, isEmptyManuscript } = createPreview({ getDocument: () => doc, preview: el.preview, paperDescription: $('paper-description'), readEditableText, isReflowing: () => isReflowing });
-  function renderPreview() { clearTimeout(fontReflowTimer); fontReflowTimer = null; drawPreview(); }
+  function updatePreviewScale() { if (el.preview.dataset.exporting) return; const page = el.preview.querySelector('.book-page'), pane = el.preview.closest('.preview-pane'); if (!page || !pane) return; const style = getComputedStyle(pane), available = pane.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight); if (available > 0) el.preview.style.zoom = String(Math.min(1, available / page.offsetWidth)); }
+  function renderPreview() { clearTimeout(fontReflowTimer); fontReflowTimer = null; drawPreview(); updatePreviewScale(); }
   function flushFontReflow() { if (!fontReflowTimer) return; renderPreview(); }
   function scheduleFontReflow() {
     const stack = fontStackFor(doc.typesetting.fontFamily);
@@ -224,7 +225,7 @@
   }
   function bindMarginControls() { [[el.marginHorizontal, 'marginHorizontalMm', 'margin-horizontal-value'], [el.marginVertical, 'marginVerticalMm', 'margin-vertical-value']].forEach(([input, key, output]) => input.addEventListener('input', () => { doc.typesetting[key] = Number(input.value); $(output).value = `${input.value}mm`; syncPresetControl(); captureHistory(); renderPreview(); scheduleSave(); })); }
   function arrangeControls() { const library = document.querySelector('.library-pane'), heading = library?.querySelector('.pane-heading'), meta = document.querySelector('.document-meta'), design = document.querySelector('.book-design'), toolbar = document.querySelector('.toolbar'); if (heading && meta && design) heading.after(meta, design); if (toolbar) { toolbar.before(el.status); toolbar.append($('print-button'), $('png-button'), $('markdown-button')); document.querySelector('.export-actions')?.remove(); } }
-  async function init() { arrangeControls(); doc = newDocument(); await restore(); await restoreLocalFonts(); lastSnapshot = snapshot(); bindDesignControls(); bindRunningControls(); bindMarginControls(); bind(); window.addEventListener('pagehide', flushPendingSave); document.addEventListener('blur', event => { if (event.target instanceof Element && event.target.closest('.manuscript-page')) event.stopPropagation(); }, true); render(); updateUndoButtons(); if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {}); }
+  async function init() { arrangeControls(); doc = newDocument(); await restore(); await restoreLocalFonts(); lastSnapshot = snapshot(); bindDesignControls(); bindRunningControls(); bindMarginControls(); bind(); window.addEventListener('pagehide', flushPendingSave); document.addEventListener('blur', event => { if (event.target instanceof Element && event.target.closest('.manuscript-page')) event.stopPropagation(); }, true); render(); const pane = el.preview.closest('.preview-pane'); if ('ResizeObserver' in window) new ResizeObserver(updatePreviewScale).observe(pane); else window.addEventListener('resize', updatePreviewScale); updateUndoButtons(); if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {}); }
   el.loadLocalFonts.addEventListener('click', loadLocalFonts);
   bindFontPicker();
   init();

@@ -122,7 +122,7 @@ function createPreview({ getDocument, preview, paperDescription, readEditableTex
     range.setEnd(textNode, textNode.length);
     const lineBoxGap = node.getBoundingClientRect().bottom - range.getBoundingClientRect().bottom;
     const pageTop = page.getBoundingClientRect().top;
-    const pageBottom = page.clientHeight - pageBottomCache.get(page);
+    const pageBottom = (page.clientHeight - pageBottomCache.get(page)) * page.getBoundingClientRect().height / page.clientHeight;
     let low = 1, high = text.length - 1, fit = 0;
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
